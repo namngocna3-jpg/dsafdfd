@@ -1,6 +1,7 @@
 // Chuan hoa danh sach loai output (kinds). Cho phep chon nhieu loai cung luc.
-// Canonical: video, audio, mindmap, pptx, pdf, image
-export const CANONICAL = ["video", "audio", "mindmap", "pptx", "pdf", "image"];
+// Canonical: video, audio, mindmap, ebook, image
+// Dinh tuyen: video/audio/mindmap/image -> NotebookLM; ebook (slide/pdf dep) -> Gamma.
+export const CANONICAL = ["video", "audio", "mindmap", "ebook", "image"];
 
 // Alias than thien voi nguoi dung / Make -> ten chuan
 const ALIASES = {
@@ -11,16 +12,20 @@ const ALIASES = {
   "mind-map": "mindmap",
   mind_map: "mindmap",
   "so-do-tu-duy": "mindmap",
-  pptx: "pptx",
-  slide: "pptx",
-  slides: "pptx",
-  "slide-deck": "pptx",
-  powerpoint: "pptx",
-  pdf: "pdf",
-  "slide-pdf": "pdf",
-  "pdf-slide": "pdf",
-  "pptx-pdf": "pdf",
-  report: "pdf",
+  // ebook = slide/tai lieu dep do Gamma sinh (xuat PDF)
+  ebook: "ebook",
+  slide: "ebook",
+  slides: "ebook",
+  "slide-deck": "ebook",
+  slidedeck: "ebook",
+  pptx: "ebook",
+  powerpoint: "ebook",
+  ppt: "ebook",
+  pdf: "ebook",
+  "slide-pdf": "ebook",
+  "pdf-slide": "ebook",
+  "pptx-pdf": "ebook",
+  report: "ebook",
   image: "image",
   images: "image",
   anh: "image",

@@ -9,15 +9,17 @@ import { loadSegments } from "./segments.mjs";
 import notebooklmPy from "./providers/notebooklmPy.mjs";
 import nlmCli from "./providers/nlmCli.mjs";
 import surfsense from "./providers/surfsense.mjs";
+import gamma from "./providers/gamma.mjs";
 
 const ALL = {
   "notebooklm-py": notebooklmPy,
   "notebooklm-mcp-cli": nlmCli,
   surfsense,
+  gamma,
 };
 
-// Thu tu mac dinh: 2 ban NotebookLM (chat luong cao, de gay) truoc, SurfSense (on dinh) chot.
-const ORDER = (process.env.PROVIDER_ORDER || "notebooklm-py,notebooklm-mcp-cli,surfsense")
+// Thu tu mac dinh. video/audio/mindmap/image -> NotebookLM; ebook -> Gamma.
+const ORDER = (process.env.PROVIDER_ORDER || "notebooklm-py,gamma,surfsense")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
