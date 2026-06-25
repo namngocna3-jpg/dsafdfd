@@ -2,7 +2,7 @@
 // Yeu cau: pip install notebooklm-py + da `notebooklm login` (cookie Google) tren host co browser.
 import path from "node:path";
 import { run, parseId, log } from "../util.mjs";
-import { renderMindmapHtml } from "../mindmaphtml.mjs";
+import { renderMindmapHtml, renderMindmapPng } from "../mindmaphtml.mjs";
 
 const BIN = process.env.NOTEBOOKLM_PY_BIN || "notebooklm";
 const GEN_TIMEOUT = Number(process.env.NLPY_GEN_TIMEOUT_MS || 1_800_000); // 30 phut/loai
@@ -63,11 +63,19 @@ export default {
         await run(BIN, ["generate", ...m.gen], { timeoutMs: GEN_TIMEOUT });
         let out = path.join(outDir, `${kind}.${m.ext}`);
         await run(BIN, ["download", m.dl, out], { timeoutMs: 600_000 });
-        // mindmap: NotebookLM chi cho JSON -> tu render thanh HTML mindmap xem duoc.
+        // mindmap: NotebookLM chi cho JSON -> render HTML (tuong tac) + PNG (xem trong Drive).
         if (kind === "mindmap") {
           try {
-            out = await renderMindmapHtml(out);
-            log(`    notebooklm-py: da render mindmap.html`);
+            const htmlPath = await renderMindmapHtml(out);
+            const files = [htmlPath];
+            try {
+              const png = await renderMindmapPng(htmlPath);
+              if (png) files.unshift(png); // PNG dau de Drive xem truc tiep
+              log(`    notebooklm-py: da render mindmap.html${png ? " + .png" : " (PNG bo qua)"}`);
+            } catch (e3) {
+              log(`    notebooklm-py: render PNG loi (${e3.message}) -> chi co HTML`);
+            }
+            out = files.length > 1 ? files : htmlPath; // mang neu co nhieu file
           } catch (e2) {
             log(`    notebooklm-py: render mindmap HTML loi (${e2.message}) -> giu JSON`);
           }

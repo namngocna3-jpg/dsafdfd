@@ -36,22 +36,25 @@ function json(res, code, obj) {
 }
 
 // Gom cac file ket qua co that (duoi OUT_ROOT) thanh URL tai duoc.
+// info.output co the la 1 chuoi (1 file) hoac 1 mang (vd mindmap -> [png, html]).
 function collectFiles(result) {
   const files = [];
   for (const seg of result.results || []) {
     for (const [kind, info] of Object.entries(seg.produced || {})) {
-      const out = info?.output;
-      if (typeof out !== "string") continue; // "make" / artifact ref -> bo qua
-      const abs = path.resolve(out);
-      if (!abs.startsWith(OUT_ROOT) || !fs.existsSync(abs)) continue;
-      const rel = path.relative(OUT_ROOT, abs);
-      files.push({
-        segment: seg.title,
-        kind,
-        provider: info.provider,
-        name: path.basename(abs),
-        url: `${PUBLIC_BASE}/files/${rel.split(path.sep).map(encodeURIComponent).join("/")}`,
-      });
+      const outs = Array.isArray(info?.output) ? info.output : [info?.output];
+      for (const out of outs) {
+        if (typeof out !== "string") continue; // "make" / artifact ref -> bo qua
+        const abs = path.resolve(out);
+        if (!abs.startsWith(OUT_ROOT) || !fs.existsSync(abs)) continue;
+        const rel = path.relative(OUT_ROOT, abs);
+        files.push({
+          segment: seg.title,
+          kind,
+          provider: info.provider,
+          name: path.basename(abs),
+          url: `${PUBLIC_BASE}/files/${rel.split(path.sep).map(encodeURIComponent).join("/")}`,
+        });
+      }
     }
   }
   return files;

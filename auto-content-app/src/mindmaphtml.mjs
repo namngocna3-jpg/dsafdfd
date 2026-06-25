@@ -2,6 +2,7 @@
 // mindmap tuong tac (markmap): mo bang trinh duyet la thay so do cay, click xo/thu nhanh.
 // Luu y: HTML dung markmap tu CDN -> can mang khi mo (mo tren may co internet la duoc).
 import { readFile, writeFile } from "node:fs/promises";
+import fs from "node:fs";
 import path from "node:path";
 
 const name = (n) => n?.name ?? n?.title ?? n?.label ?? n?.topic ?? n?.text ?? "";
@@ -55,4 +56,50 @@ export async function renderMindmapHtml(jsonPath) {
   const htmlPath = jsonPath.replace(/\.json$/i, ".html");
   await writeFile(htmlPath, html, "utf8");
   return htmlPath;
+}
+
+// Tim Chromium (Playwright tai san khi cai notebooklm-py). Cho phep override bang CHROME_BIN.
+function findChrome() {
+  if (process.env.CHROME_BIN && fs.existsSync(process.env.CHROME_BIN)) return process.env.CHROME_BIN;
+  const base = path.join(process.env.HOME || "/root", ".cache", "ms-playwright");
+  try {
+    for (const d of fs.readdirSync(base)) {
+      if (!d.startsWith("chromium-") || d.includes("headless")) continue;
+      const p = path.join(base, d, "chrome-linux64", "chrome");
+      if (fs.existsSync(p)) return p;
+    }
+  } catch {}
+  return null;
+}
+
+/**
+ * Chup mindmap HTML thanh PNG bang chromium (puppeteer-core).
+ * Tra ve duong dan PNG, hoac null neu thieu puppeteer-core/chromium (bo qua, khong loi).
+ */
+export async function renderMindmapPng(htmlPath) {
+  let puppeteer;
+  try {
+    puppeteer = (await import("puppeteer-core")).default;
+  } catch {
+    return null; // chua cai puppeteer-core -> bo qua PNG, van giu HTML
+  }
+  const exec = findChrome();
+  if (!exec) return null;
+  const pngPath = htmlPath.replace(/\.html$/i, ".png");
+  const browser = await puppeteer.launch({
+    executablePath: exec,
+    headless: true,
+    args: ["--no-sandbox", "--disable-dev-shm-usage"],
+  });
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1600, height: 1000, deviceScaleFactor: 2 });
+    await page.goto("file://" + htmlPath, { waitUntil: "networkidle0", timeout: 60_000 });
+    await page.waitForSelector(".markmap svg g", { timeout: 30_000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 1500)); // doi markmap fit xong
+    await page.screenshot({ path: pngPath });
+    return pngPath;
+  } finally {
+    await browser.close();
+  }
 }
