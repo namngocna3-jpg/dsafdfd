@@ -234,6 +234,17 @@ curl -s -X POST "http://localhost:8787/generate?async=1" -H "Authorization: Bear
 
 ## 11. ĐỊNH HƯỚNG MỚI — mỗi loại dùng công cụ tốt nhất (trao đổi với Huỳnh Xuân Tùng, 25/06)
 
+### ✅ ĐÃ TRIỂN KHAI (cập nhật)
+- **Gamma ebook**: XONG. Provider `src/providers/gamma.mjs`, kind `ebook` → Gamma API → PDF. Đã chạy ra file thật.
+- **Xmind**: ĐÃ BỎ (file .xmind không ổn). Mindmap giữ NotebookLM → png + pdf + html.
+- Định tuyến hiện tại: video/audio/mindmap/image → NotebookLM; **ebook → Gamma**.
+- `.env` Gamma: `GAMMA_API_KEY` (đã đặt). Tùy chọn: `GAMMA_FORMAT` (presentation|document, mặc định presentation), `GAMMA_EXPORT` (pdf|pptx), `GAMMA_NUM_CARDS` (số trang, để trống = Gamma tự quyết), `GAMMA_INSTRUCTIONS` (ghi đè hướng dẫn), `GAMMA_TEXT_MODE` (generate). Mặc định: tiếng Việt, tone thân thiện, ảnh illustration mỗi trang, nhiều icon, không gạch ngang.
+- **Credits Gamma**: ~104 credits/lần sinh (8 cards). Theo dõi `credits.remaining` trong log `gamma: xong (...)`. Cần nạp thêm khi cạn.
+- ⚠️ Gamma API kiểm tra field NGHIÊM: chỉ gửi inputText/textMode/format/exportAs/additionalInstructions/numCards. `themeName` KHÔNG hợp lệ (đã bỏ) — theme đặt mặc định trong tài khoản Gamma hoặc mô tả trong additionalInstructions.
+- PROVIDER_ORDER trên VPS .env: `notebooklm-py,gamma,surfsense`.
+
+
+
 Đổi chiến lược: KHÔNG để NotebookLM làm tất, mà **chia theo công cụ mạnh nhất từng loại**:
 
 | Loại đầu ra | Công cụ MỚI | Ghi chú |
