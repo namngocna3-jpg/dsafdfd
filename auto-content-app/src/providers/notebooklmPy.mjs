@@ -27,8 +27,11 @@ export default {
 
   async healthCheck() {
     try {
-      const { stdout, stderr } = await run(BIN, ["auth", "check", "--test"], { timeoutMs: 30_000 });
-      return /ok|valid|success|authenticated|logged/i.test(stdout + stderr);
+      // `auth check` thoat code 0 khi da dang nhap (run() reject neu code != 0).
+      const { stdout, stderr } = await run(BIN, ["auth", "check"], { timeoutMs: 30_000 });
+      const out = stdout + stderr;
+      // Chay duoc + khong co dau hieu loi ro rang = khoe.
+      return !/not (authenticated|logged|signed)|no .*cookie|expired|invalid|fail/i.test(out);
     } catch (e) {
       log(`  notebooklm-py health fail: ${e.message}`);
       return false;
