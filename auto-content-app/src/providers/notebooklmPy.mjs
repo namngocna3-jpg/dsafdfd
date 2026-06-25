@@ -2,7 +2,7 @@
 // Yeu cau: pip install notebooklm-py + da `notebooklm login` (cookie Google) tren host co browser.
 import path from "node:path";
 import { run, parseId, log } from "../util.mjs";
-import { renderMindmapHtml, renderMindmapPng } from "../mindmaphtml.mjs";
+import { renderMindmapHtml, renderMindmapMedia } from "../mindmaphtml.mjs";
 import { renderXmindFile } from "../xmindfile.mjs";
 
 const BIN = process.env.NOTEBOOKLM_PY_BIN || "notebooklm";
@@ -87,11 +87,12 @@ export default {
             const htmlPath = await renderMindmapHtml(jsonPath);
             const files = [htmlPath];
             try {
-              const png = await renderMindmapPng(htmlPath);
-              if (png) files.unshift(png); // PNG dau de Drive xem truc tiep
-              log(`    notebooklm-py: da render mindmap.html${png ? " + .png" : " (PNG bo qua)"}`);
+              const media = await renderMindmapMedia(htmlPath);
+              if (media.pdf) files.unshift(media.pdf); // PDF mindmap (yeu cau chinh)
+              if (media.png) files.unshift(media.png); // PNG xem truoc trong Drive
+              log(`    notebooklm-py: mindmap html${media.png ? " + png" : ""}${media.pdf ? " + pdf" : ""}`);
             } catch (e3) {
-              log(`    notebooklm-py: render PNG loi (${e3.message}) -> chi co HTML`);
+              log(`    notebooklm-py: render PNG/PDF loi (${e3.message}) -> chi co HTML`);
             }
             try {
               const xm = jsonPath.replace(/\.json$/i, ".xmind");

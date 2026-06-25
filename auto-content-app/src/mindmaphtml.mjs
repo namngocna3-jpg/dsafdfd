@@ -76,16 +76,17 @@ function findChrome() {
  * Chup mindmap HTML thanh PNG bang chromium (puppeteer-core).
  * Tra ve duong dan PNG, hoac null neu thieu puppeteer-core/chromium (bo qua, khong loi).
  */
-export async function renderMindmapPng(htmlPath) {
+export async function renderMindmapMedia(htmlPath) {
   let puppeteer;
   try {
     puppeteer = (await import("puppeteer-core")).default;
   } catch {
-    return null; // chua cai puppeteer-core -> bo qua PNG, van giu HTML
+    return { png: null, pdf: null }; // chua cai puppeteer-core
   }
   const exec = findChrome();
-  if (!exec) return null;
+  if (!exec) return { png: null, pdf: null };
   const pngPath = htmlPath.replace(/\.html$/i, ".png");
+  const pdfPath = htmlPath.replace(/\.html$/i, ".pdf");
   const browser = await puppeteer.launch({
     executablePath: exec,
     headless: true,
@@ -98,7 +99,21 @@ export async function renderMindmapPng(htmlPath) {
     await page.waitForSelector(".markmap svg g", { timeout: 30_000 }).catch(() => {});
     await new Promise((r) => setTimeout(r, 1500)); // doi markmap fit xong
     await page.screenshot({ path: pngPath });
-    return pngPath;
+    let pdfOk = false;
+    try {
+      await page.pdf({
+        path: pdfPath,
+        landscape: true,
+        printBackground: true,
+        width: "1600px",
+        height: "1000px",
+        pageRanges: "1",
+      });
+      pdfOk = true;
+    } catch (e) {
+      console.error(`[mindmap] xuat PDF loi: ${e.message}`);
+    }
+    return { png: pngPath, pdf: pdfOk ? pdfPath : null };
   } finally {
     await browser.close();
   }
