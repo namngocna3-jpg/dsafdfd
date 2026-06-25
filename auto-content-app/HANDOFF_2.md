@@ -198,5 +198,39 @@ curl -s -X POST "http://localhost:8787/generate?async=1" -H "Authorization: Bear
 - Đổi `APP_TOKEN` dài hơn (sửa cả `.env` VPS lẫn header Bearer trong Scenario 1 module 3).
 - Xuất video/audio đã verify lệnh nhưng CHƯA chạy thực tế end-to-end (mới test mindmap/pptx/image). Nên test 1 lần `[video]` để chắc regex/lệnh.
 
+## 10. LỘ TRÌNH 3 PROVIDER (A đã xong · B, C sẽ tích hợp)
+
+**Mục đích:** orchestrator chạy fallback theo TỪNG loại theo `PROVIDER_ORDER`. Loại nào provider trước không làm được / lỗi / hết hạn → rớt sang provider kế. Nhờ vậy: (1) phủ đủ loại, (2) dự phòng khi 1 nguồn chết (NotebookLM bị Google chặn/cookie hết hạn, rate-limit...). **Code orchestrator ĐÃ hỗ trợ sẵn A→B→C — tích hợp B/C chỉ là cài + cấu hình + sửa lệnh CLI, KHÔNG cần sửa orchestrator.**
+
+### ✅ A — notebooklm-py (ĐÃ XONG, đang chạy)
+- Repo: `teng-lin/notebooklm-py`. Binary CLI `notebooklm` (pipx). Provider: `src/providers/notebooklmPy.mjs`.
+- Cơ chế: tự động hoá web NotebookLM bằng trình duyệt (Playwright/Chromium) + cookie Google. Cần đăng nhập Google trên host có màn hình ảo (Xvfb).
+- Làm được: video, audio, mindmap(→JSON, app tự render PNG+HTML), pptx, pdf, image(infographic). Tiếng Việt qua `NOTEBOOKLM_HL=vi`.
+- Trạng thái: chạy thật, đã giao Drive.
+
+### ⏳ B — notebooklm-mcp-cli / `nlm` (CHƯA cài — provider dự phòng cho NotebookLM)
+- Repo: `jacob-bd/notebooklm-mcp-cli` (binary `nlm`, có cả CLI + MCP server). (Còn 1 lựa chọn khác: `tmc/nlm` — Go CLI, lệnh khác.) Provider: `src/providers/nlmCli.mjs` (biến `NLM_BIN`, mặc định `nlm`).
+- Cơ chế: cũng truy cập NotebookLM (web/reverse API) + cookie Google → là **đường thứ 2 tới NotebookLM**, dự phòng khi A trục trặc.
+- Lệnh provider đang giả định (PHẢI verify lại như đã làm với A): `nlm notebook create "<title>"`, `nlm source add <nb> --file <path>`, `nlm studio create <nb> --type <video|audio|mindmap|slide>`, `nlm download <type> <nb> <artifactId> <out>`.
+- Hạn chế đã biết trong code: mindmap/slide có thể **không tải file trực tiếp** (chỉ trả artifact id) → kém A ở 2 loại này.
+- **Việc cần làm để tích hợp B:**
+  1. Cài: xem README repo (thường `pipx install ...` hoặc `go install github.com/...@latest`). Đặt `NLM_BIN` = đường dẫn binary.
+  2. Đăng nhập Google cho `nlm` (giống A: qua VNC + Xvfb, hoặc cookie).
+  3. Chạy thử 1 lệnh thật, đối chiếu output → **sửa `nlmCli.mjs`** cho khớp cú pháp thật (parseId, tên lệnh, cờ --wait/--format...) — y hệt quy trình đã làm cho A.
+  4. `ENABLE_NLM=true` + thêm `notebooklm-mcp-cli` vào `PROVIDER_ORDER` (vd `notebooklm-py,notebooklm-mcp-cli,surfsense`).
+
+### ⏳ C — SurfSense (CHƯA cấu hình — fallback CUỐI, KHÔNG cần Google)
+- Repo: `MODSetter/SurfSense` (open-source). Provider: `src/providers/surfsense.mjs`. 2 chế độ (biến `SURFSENSE_MODE`):
+  - **`make`** (hiện tại): app POST sang `MAKE_WEBHOOK_URL` để 1 scenario Make tự lo sinh+giao. Hiện CHƯA cấu hình webhook cho surfsense → đang báo `404` (vô hại, chỉ là fallback cuối). Muốn dùng: tạo scenario Make sinh nội dung rồi đặt `MAKE_WEBHOOK_URL`.
+  - **`rest`**: app gọi thẳng REST của 1 instance SurfSense **tự host**. Luồng: login JWT (`/api/v1/auth/jwt/login`) → upload tài liệu (`/documents/fileupload`) → kích sinh (`SS_GENERATE_PATH` — lấy từ `/docs` của instance) → poll video-presentations tới khi ready.
+- Ưu điểm: **KHÔNG cần đăng nhập Google** (SurfSense dùng API key LLM/TTS riêng) → ổn định nhất, hợp làm chốt cuối. Làm được: video, audio, report, pptx/pdf, image; mindmap không chắc.
+- **Việc cần làm để tích hợp C (mode rest):**
+  1. Dựng SurfSense bằng Docker trên 1 server (cần Postgres + API key LLM + TTS) — theo README repo.
+  2. Đặt `.env`: `SURFSENSE_MODE=rest`, `SURFSENSE_URL`, `SS_EMAIL`, `SS_PASSWORD`, `SEARCH_SPACE_ID`, `SS_PROCESSING_MODE`, và `SS_GENERATE_PATH` (mở `/docs` của instance để tìm endpoint kích sinh, vd `/chats/<id>/messages`), tùy chọn `SS_GENERATE_BODY`.
+  3. Verify từng bước (login/upload/trigger/poll) rồi chỉnh `surfsense.mjs` nếu API khác.
+
+### Thứ tự ưu tiên đề xuất (sau khi có đủ)
+`PROVIDER_ORDER=notebooklm-py,notebooklm-mcp-cli,surfsense` — A chất lượng cao nhất nhưng dễ gãy (cookie), B là đường NotebookLM dự phòng, C ổn định làm chốt. Mỗi loại thiếu ở A sẽ tự thử B rồi C.
+
 ## 9. Câu mở khi tiếp tục ở phiên mới
 > "Đọc `auto-content-app/HANDOFF_2.md` repo `namngocna3-jpg/dsafdfd`. Hệ thống auto-content (Drive→VPS NotebookLM→Drive, async qua 2 Make scenario) đang chạy. VPS 103.72.57.56 (systemd: autocontent + xvfb). Giúp tôi [việc cần]."
