@@ -36,12 +36,54 @@ node src/server.mjs
 # host headless: xvfb-run -a node src/server.mjs
 ```
 
+## Chọn loại output (kinds) — chọn nhiều cùng lúc
+
+Hỗ trợ: `video`, `audio`, `mindmap`, `pptx`, `pdf` (pptx dạng pdf), `image` (ảnh minh hoạ).
+Chấp nhận alias tiếng Việt/EN: `slide`→pptx, `podcast`→audio, `anh`/`anh-minh-hoa`→image,
+`pdf-slide`→pdf, `mind-map`→mindmap... Bỏ trống → dùng `DEFAULT_KINDS`.
+
+```bash
+node src/cli.mjs bai.pdf "Bai 1" --kinds=video          # chỉ video
+node src/cli.mjs bai.pdf --kinds=pptx,pdf,mindmap,image # nhiều loại
+```
+
+**Fallback theo từng loại:** mỗi loại được thử lần lượt qua các provider; loại nào provider
+hiện tại không làm được/ lỗi thì rớt sang provider kế. Provider nào hỗ trợ loại nào:
+
+| kind | notebooklm-py | nlm | surfsense (make) | surfsense (rest) |
+|------|:--:|:--:|:--:|:--:|
+| video, audio | ✅ | ✅ | ✅ | ✅ |
+| mindmap, pptx, pdf | ✅ | ✅ (artifact) | ✅ | pptx/pdf ✅ |
+| image | ❌ | ❌ | ✅ | ✅ |
+
+## Chạy hàng loạt từ 1 file (marker bắt đầu/kết thúc)
+
+1 file text (`.txt`/`.md`, hoặc Google Doc xuất text) chứa nhiều mục, mỗi mục bọc giữa
+`BEGIN`/`END` (hoặc `BẮT ĐẦU`/`KẾT THÚC`). Mỗi mục tự khai báo `title` + `kinds` riêng →
+app tách thành nhiều job, mỗi job ghi vào `out/<timestamp>/seg-NN-<title>/`.
+
+```
+=== BEGIN | title: Chuong 1 | kinds: video, mindmap
+...nội dung lý thuyết chương 1...
+=== END
+
+=== BEGIN | title: Chuong 2 | kinds: pptx, pdf, image
+...nội dung chương 2...
+=== END
+```
+
+File **không có marker** (hoặc PDF/Docx) → xử lý như 1 job duy nhất với `kinds` của request.
+
 ## API
 
 | Method | Path        | Mô tả |
 |--------|-------------|-------|
 | GET    | `/health`   | `{ ok: true }` |
-| POST   | `/generate` | Header `Authorization: Bearer <APP_TOKEN>`. Body JSON: `{ filePath \| fileUrl \| driveFileId, title }` |
+| GET    | `/kinds`    | Danh sách loại output hỗ trợ |
+| POST   | `/generate` | Header `Authorization: Bearer <APP_TOKEN>`. Body JSON: `{ filePath \| fileUrl \| driveFileId, title, kinds }` |
+
+`kinds`: chuỗi `"video,mindmap"` hoặc mảng `["pptx","pdf","image"]` (tuỳ chọn).
+Trả `200` nếu sinh đủ; `207` nếu sinh được một phần (`missing` liệt kê loại còn thiếu).
 
 App tự tải `fileUrl` về local trước khi đưa cho provider A/B (cần file thật).
 Mỗi job ghi vào 1 thư mục con `out/<timestamp>/` riêng.
@@ -50,8 +92,10 @@ Mỗi job ghi vào 1 thư mục con `out/<timestamp>/` riêng.
 
 ```
 src/
-├── util.mjs            # run CLI, timeout, parseId, ensureLocalFile
-├── orchestrator.mjs    # bộ não fallback
+├── util.mjs            # run CLI, timeout, parseId, ensureLocalFile, sanitize
+├── kinds.mjs           # chuẩn hoá loại output + alias
+├── segments.mjs        # tách 1 file thành nhiều job theo marker
+├── orchestrator.mjs    # bộ não: tách segment + fallback theo từng loại
 ├── cli.mjs             # chạy tay
 ├── server.mjs          # HTTP cho Make
 └── providers/

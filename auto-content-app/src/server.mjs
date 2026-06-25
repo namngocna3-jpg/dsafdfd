@@ -1,8 +1,16 @@
-// HTTP server: POST /generate (cho Make/Drive goi vao), GET /health
+// HTTP server cho Make/Drive goi vao.
+//   GET  /health        -> { ok: true }
+//   GET  /kinds         -> danh sach loai output ho tro
+//   POST /generate      -> sinh hoc lieu (co fallback + chay hang loat theo segment)
+//        Header: Authorization: Bearer <APP_TOKEN>
+//        Body JSON: { filePath | fileUrl | driveFileId, title, kinds }
+//          kinds: "video,mindmap"  hoac  ["video","pptx","pdf","image"]  (chon nhieu)
+//                 bo trong -> dung DEFAULT_KINDS (mac dinh video,mindmap)
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import { generateWithFallback } from "./orchestrator.mjs";
+import { generateBatch } from "./orchestrator.mjs";
+import { CANONICAL } from "./kinds.mjs";
 import { log } from "./util.mjs";
 
 const PORT = Number(process.env.PORT || 8787);
@@ -15,6 +23,7 @@ function json(res, code, obj) {
 
 const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/health") return json(res, 200, { ok: true });
+  if (req.method === "GET" && req.url === "/kinds") return json(res, 200, { kinds: CANONICAL });
 
   if (req.method === "POST" && req.url === "/generate") {
     if (TOKEN && req.headers.authorization !== `Bearer ${TOKEN}`) {
@@ -36,14 +45,15 @@ const server = http.createServer(async (req, res) => {
     const outDir = path.join(process.env.OUT_DIR || "./out", stamp);
     fs.mkdirSync(outDir, { recursive: true });
     try {
-      const result = await generateWithFallback({
+      const result = await generateBatch({
         filePath: data.filePath,
         fileUrl: data.fileUrl,
         driveFileId: data.driveFileId,
         title: data.title || "content",
+        kinds: data.kinds, // string | array | undefined
         outDir,
       });
-      return json(res, 200, result);
+      return json(res, result.ok ? 200 : 207, result); // 207: xong 1 phan (con loai thieu)
     } catch (e) {
       return json(res, 500, { error: e.message, details: e.details });
     }
