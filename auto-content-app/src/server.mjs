@@ -27,6 +27,7 @@ const MIME = {
   ".mp4": "video/mp4", ".mp3": "audio/mpeg", ".json": "application/json",
   ".pdf": "application/pdf", ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".txt": "text/plain",
+  ".html": "text/html; charset=utf-8",
 };
 
 function json(res, code, obj) {

@@ -2,6 +2,7 @@
 // Yeu cau: pip install notebooklm-py + da `notebooklm login` (cookie Google) tren host co browser.
 import path from "node:path";
 import { run, parseId, log } from "../util.mjs";
+import { renderMindmapHtml } from "../mindmaphtml.mjs";
 
 const BIN = process.env.NOTEBOOKLM_PY_BIN || "notebooklm";
 const GEN_TIMEOUT = Number(process.env.NLPY_GEN_TIMEOUT_MS || 1_800_000); // 30 phut/loai
@@ -57,8 +58,17 @@ export default {
       if (!m) continue;
       try {
         await run(BIN, ["generate", ...m.gen], { timeoutMs: GEN_TIMEOUT });
-        const out = path.join(outDir, `${kind}.${m.ext}`);
+        let out = path.join(outDir, `${kind}.${m.ext}`);
         await run(BIN, ["download", m.dl, out], { timeoutMs: 600_000 });
+        // mindmap: NotebookLM chi cho JSON -> tu render thanh HTML mindmap xem duoc.
+        if (kind === "mindmap") {
+          try {
+            out = await renderMindmapHtml(out);
+            log(`    notebooklm-py: da render mindmap.html`);
+          } catch (e2) {
+            log(`    notebooklm-py: render mindmap HTML loi (${e2.message}) -> giu JSON`);
+          }
+        }
         outputs[kind] = out;
       } catch (e) {
         log(`    notebooklm-py bo qua kind '${kind}': ${e.message}`);
