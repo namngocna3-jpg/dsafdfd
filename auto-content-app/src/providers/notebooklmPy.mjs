@@ -6,6 +6,9 @@ import { renderMindmapHtml } from "../mindmaphtml.mjs";
 
 const BIN = process.env.NOTEBOOKLM_PY_BIN || "notebooklm";
 const GEN_TIMEOUT = Number(process.env.NLPY_GEN_TIMEOUT_MS || 1_800_000); // 30 phut/loai
+// Ngon ngu dau ra (mac dinh NotebookLM la 'en' -> ep 'vi'). Cung set NOTEBOOKLM_HL=vi trong .env
+// de cac loai khac (video/audio/slide) cung ra tieng Viet.
+const LANG = process.env.NLM_LANG || process.env.NOTEBOOKLM_HL || "vi";
 
 // canonical kind -> { gen: args lenh `generate`, dl: subcommand `download`, ext: duoi file }
 // CLI 0.7.x: generate KHONG co --wait. mind-map note-backed la dong bo; video/audio/slide-deck
@@ -14,7 +17,7 @@ const MAP = {
   video: { gen: ["video"], dl: "video", ext: "mp4" },
   audio: { gen: ["audio"], dl: "audio", ext: "mp3" },
   // pin note-backed (JSON dong bo); mac dinh se doi sang 'interactive' o v0.8.0
-  mindmap: { gen: ["mind-map", "--kind", "note-backed"], dl: "mind-map", ext: "json" },
+  mindmap: { gen: ["mind-map", "--kind", "note-backed", "--language", LANG], dl: "mind-map", ext: "json" },
   pptx: { gen: ["slide-deck"], dl: "slide-deck", ext: "pptx" },
   pdf: { gen: ["slide-deck"], dl: "slide-deck", ext: "pdf" }, // download tu nhan dinh dang theo duoi file
   image: { gen: ["infographic"], dl: "infographic", ext: "png" }, // NotebookLM sinh anh qua infographic
