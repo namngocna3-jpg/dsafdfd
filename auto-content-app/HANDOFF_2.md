@@ -232,5 +232,33 @@ curl -s -X POST "http://localhost:8787/generate?async=1" -H "Authorization: Bear
 ### Thứ tự ưu tiên đề xuất (sau khi có đủ)
 `PROVIDER_ORDER=notebooklm-py,notebooklm-mcp-cli,surfsense` — A chất lượng cao nhất nhưng dễ gãy (cookie), B là đường NotebookLM dự phòng, C ổn định làm chốt. Mỗi loại thiếu ở A sẽ tự thử B rồi C.
 
+## 11. ĐỊNH HƯỚNG MỚI — mỗi loại dùng công cụ tốt nhất (trao đổi với Huỳnh Xuân Tùng, 25/06)
+
+Đổi chiến lược: KHÔNG để NotebookLM làm tất, mà **chia theo công cụ mạnh nhất từng loại**:
+
+| Loại đầu ra | Công cụ MỚI | Ghi chú |
+|---|---|---|
+| **Video học tập** | **NotebookLM** (provider A — đã có) | Giữ nguyên, đang chạy tốt |
+| **Mindmap** | **Xmind** | Xuất file `.xmind` (mở bằng Xmind), thay cho PNG/HTML markmap hiện tại |
+| **Slide / "ebook"** | **Gamma** (gamma.app) | Làm ĐẸP, sinh động, kiểu ebook. Gọi tên loại này là **"ebook"** |
+
+**Yêu cầu nội dung ebook (Gamma):**
+- Nội dung lý thuyết ít → **dàn trải ra nhiều trang** cho dày dặn.
+- Định mức: ~5 bài học ≈ 60 trang; 1 level ≈ 120 trang.
+- Phục vụ "unlock gói cao" (bán theo level/gói).
+
+**Khả thi & cách tích hợp (cần nghiên cứu khi làm):**
+- **Gamma**: có **Generations API (beta, tốn credit)** — POST prompt/nội dung → tạo deck → xuất PDF/PPTX. Đây là hướng tự động hoá chính cho "ebook". Nếu không có API quota → automation trình duyệt gamma.app (như NotebookLM). → thêm provider mới `providers/gamma.mjs`, kind mới `ebook`.
+- **Xmind**: KHÔNG có cloud API chính thức. Hướng khả thi: **convert mindmap JSON của NotebookLM → file `.xmind`** (định dạng .xmind là zip chứa content.json/XML) → tạo `.xmind` thật mở được bằng Xmind. Tận dụng JSON mindmap đã có. → thêm hàm xuất .xmind trong `mindmaphtml.mjs` (hoặc module mới), hoặc provider riêng.
+- **NotebookLM video**: giữ nguyên provider A.
+
+**Việc cần làm (khi quay lại / phiên sau):**
+1. Thêm kind `ebook` + provider Gamma (nghiên cứu Gamma API trước; cần API key/credit của Gamma).
+2. Mindmap: thêm xuất `.xmind` (convert từ JSON) — có thể thay hoặc bổ sung cho PNG/HTML.
+3. Cập nhật `kinds.mjs` (alias `ebook`), `DEFAULT_KINDS`, và `PROVIDER_ORDER`/định tuyến theo loại (video→A, mindmap→Xmind, ebook→Gamma).
+4. Logic "dàn trang" cho ebook ít nội dung (prompt Gamma yêu cầu mở rộng đủ số trang theo level).
+
+> Lưu ý: đây là định hướng, CHƯA code. Hệ thống hiện tại (NotebookLM đủ 6 loại) vẫn chạy — bổ sung Xmind/Gamma là mở rộng, không phá cái đang có.
+
 ## 9. Câu mở khi tiếp tục ở phiên mới
 > "Đọc `auto-content-app/HANDOFF_2.md` repo `namngocna3-jpg/dsafdfd`. Hệ thống auto-content (Drive→VPS NotebookLM→Drive, async qua 2 Make scenario) đang chạy. VPS 103.72.57.56 (systemd: autocontent + xvfb). Giúp tôi [việc cần]."
