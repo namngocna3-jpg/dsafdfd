@@ -60,6 +60,38 @@ function collectFiles(result) {
   return files;
 }
 
+// Sinh o nen cho che do async, xong thi callback ket qua sang RESULT_WEBHOOK_URL.
+async function runJobAsync(jobInput) {
+  const cb = process.env.RESULT_WEBHOOK_URL;
+  const source = jobInput.filename || jobInput.title;
+  try {
+    const result = await generateBatch(jobInput);
+    const files = collectFiles(result);
+    log(`async xong "${source}": ${files.length} file, missing: ${result.missing.join(",") || "khong"}`);
+    if (cb) {
+      await fetch(cb, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source, segments: result.segments, kinds: result.kinds, missing: result.missing, files }),
+      });
+      log(`async: da callback webhook (${files.length} file)`);
+    } else {
+      log("async: chua dat RESULT_WEBHOOK_URL -> bo qua callback (file van o tren VPS)");
+    }
+  } catch (e) {
+    log(`async loi "${source}": ${e.message}`);
+    if (cb) {
+      try {
+        await fetch(cb, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source, error: e.message, files: [] }),
+        });
+      } catch {}
+    }
+  }
+}
+
 // Luoi an toan: 1 loi bat ngo (vd stream/CLI) KHONG duoc lam sap ca server.
 process.on("uncaughtException", (e) => log(`[uncaughtException] ${e?.stack || e}`));
 process.on("unhandledRejection", (e) => log(`[unhandledRejection] ${e?.stack || e}`));
@@ -141,6 +173,15 @@ const server = http.createServer(async (req, res) => {
         kinds: u.searchParams.get("kinds") || undefined,
         outDir,
       };
+    }
+
+    // Async: tra ve ngay (202), sinh o nen, xong thi POST ket qua sang RESULT_WEBHOOK_URL.
+    // Dung cho job lau (video/audio) hoac nhieu loai -> Make khong bi timeout 300s.
+    const isAsync = u.searchParams.get("async") === "1" || process.env.ASYNC_DEFAULT === "1";
+    if (isAsync) {
+      json(res, 202, { accepted: true, source: jobInput.filename || jobInput.title });
+      runJobAsync(jobInput);
+      return;
     }
 
     try {
