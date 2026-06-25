@@ -14,7 +14,7 @@ const DEFAULT_INSTR =
   "Toan bo noi dung bang TIENG VIET. Giong dieu than thien, khuyen khich, de hieu. " +
   "Moi trang deu co anh minh hoa kieu illustration, dung nhieu icon nhat co the. " +
   "KHONG dung dau gach ngang. Trinh bay sinh dong, dep mat kieu ebook hoc tap. " +
-  "Dan trai noi dung day du, chi tiet.";
+  "Dan trai noi dung day du, chi tiet. Phong cach mau am ap kieu Peach (pastel).";
 
 function baseName(title) {
   return (
@@ -75,7 +75,6 @@ export default {
       inputText,
       textMode: process.env.GAMMA_TEXT_MODE || "generate",
       format: process.env.GAMMA_FORMAT || "presentation",
-      themeName: process.env.GAMMA_THEME || "Peach",
       exportAs,
       additionalInstructions: process.env.GAMMA_INSTRUCTIONS || DEFAULT_INSTR,
     };
