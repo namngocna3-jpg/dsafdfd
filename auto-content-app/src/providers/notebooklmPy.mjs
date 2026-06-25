@@ -3,7 +3,6 @@
 import path from "node:path";
 import { run, parseId, log } from "../util.mjs";
 import { renderMindmapHtml, renderMindmapMedia } from "../mindmaphtml.mjs";
-import { renderXmindFile } from "../xmindfile.mjs";
 
 const BIN = process.env.NOTEBOOKLM_PY_BIN || "notebooklm";
 const GEN_TIMEOUT = Number(process.env.NLPY_GEN_TIMEOUT_MS || 1_800_000); // 30 phut/loai
@@ -93,18 +92,6 @@ export default {
               log(`    notebooklm-py: mindmap html${media.png ? " + png" : ""}${media.pdf ? " + pdf" : ""}`);
             } catch (e3) {
               log(`    notebooklm-py: render PNG/PDF loi (${e3.message}) -> chi co HTML`);
-            }
-            try {
-              const xm = jsonPath.replace(/\.json$/i, ".xmind");
-              const r = await renderXmindFile(jsonPath, xm, base);
-              if (r) {
-                files.push(xm);
-                log(`    notebooklm-py: da tao .xmind`);
-              } else {
-                log(`    notebooklm-py: .xmind bo qua (chua cai jszip)`);
-              }
-            } catch (e4) {
-              log(`    notebooklm-py: tao .xmind loi (${e4.message})`);
             }
             out = files.length > 1 ? files : htmlPath; // mang neu co nhieu file
           } catch (e2) {
