@@ -3,6 +3,7 @@
 import path from "node:path";
 import { run, parseId, log } from "../util.mjs";
 import { renderMindmapHtml, renderMindmapPng } from "../mindmaphtml.mjs";
+import { renderXmindFile } from "../xmindfile.mjs";
 
 const BIN = process.env.NOTEBOOKLM_PY_BIN || "notebooklm";
 const GEN_TIMEOUT = Number(process.env.NLPY_GEN_TIMEOUT_MS || 1_800_000); // 30 phut/loai
@@ -79,10 +80,11 @@ export default {
         await run(BIN, ["generate", ...m.gen], { timeoutMs: GEN_TIMEOUT });
         let out = path.join(outDir, `${base} - ${kind}.${m.ext}`);
         await run(BIN, ["download", ...m.dl, out], { timeoutMs: 600_000 });
-        // mindmap: NotebookLM chi cho JSON -> render HTML (tuong tac) + PNG (xem trong Drive).
+        // mindmap: NotebookLM chi cho JSON -> render HTML + PNG + file .xmind (mo bang Xmind).
         if (kind === "mindmap") {
+          const jsonPath = out;
           try {
-            const htmlPath = await renderMindmapHtml(out);
+            const htmlPath = await renderMindmapHtml(jsonPath);
             const files = [htmlPath];
             try {
               const png = await renderMindmapPng(htmlPath);
@@ -90,6 +92,18 @@ export default {
               log(`    notebooklm-py: da render mindmap.html${png ? " + .png" : " (PNG bo qua)"}`);
             } catch (e3) {
               log(`    notebooklm-py: render PNG loi (${e3.message}) -> chi co HTML`);
+            }
+            try {
+              const xm = jsonPath.replace(/\.json$/i, ".xmind");
+              const r = await renderXmindFile(jsonPath, xm, base);
+              if (r) {
+                files.push(xm);
+                log(`    notebooklm-py: da tao .xmind`);
+              } else {
+                log(`    notebooklm-py: .xmind bo qua (chua cai jszip)`);
+              }
+            } catch (e4) {
+              log(`    notebooklm-py: tao .xmind loi (${e4.message})`);
             }
             out = files.length > 1 ? files : htmlPath; // mang neu co nhieu file
           } catch (e2) {
