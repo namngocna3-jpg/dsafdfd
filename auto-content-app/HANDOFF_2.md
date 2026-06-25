@@ -10,7 +10,22 @@
 Tự động: **thả file học liệu vào Google Drive → sinh video/audio/mindmap/pptx/pdf/ảnh bằng NotebookLM → trả file về Drive + email.**
 
 **TRẠNG THÁI: CHẠY ĐƯỢC A→Z.** Đã nghiệm thu: mindmap (png+html), pptx, image qua chế độ async.
-Còn lại tùy chọn: thêm loại `report` (text), đổi APP_TOKEN dài hơn, xử lý .docx.
+
+### TIẾN ĐỘ (nhật ký — mới nhất ở cuối)
+- ✅ Hạ tầng: VPS + systemd (xvfb + autocontent), NotebookLM đăng nhập pdanh025, .env override.
+- ✅ 6 loại sinh được: mindmap(png+html), pptx, pdf, image, video*, audio* (*video/audio đã có lệnh đúng, ĐANG nghiệm thu thực tế).
+- ✅ Tiếng Việt, tên file theo input, mindmap ra PNG+HTML.
+- ✅ Async + webhook + 2 Make scenario (Make hết timeout).
+- ✅ **Hàng đợi (queue)**: NotebookLM CLI chỉ chạy 1 job/lúc → các file xếp hàng chạy lần lượt (sửa lỗi 2 job đè nhau làm timeout pptx).
+- ⏳ ĐANG: test video end-to-end (job đầu bị job khác đè nên cần test lại sau khi có queue).
+
+### VIỆC TIẾP THEO (làm gì tiếp)
+1. **Test lại video** sau khi deploy queue: thả/curl 1 file `[video]` ĐƠN LẺ (đừng chạy song song) → chờ 5–10' → xác nhận `test - video.mp4` vào Drive output.
+2. Test lại **pptx** đơn lẻ (lần trước bị job video đè → timeout). Với queue giờ sẽ không bị nữa.
+3. (Tùy chọn) thêm loại `report` (text), đổi APP_TOKEN dài hơn, xử lý .docx→PDF.
+
+### LỖI ĐÃ GẶP & CÁCH XỬ (quan trọng cho người tiếp nhận)
+- 2 job chạy song song → NotebookLM `use` đè notebook → job kia timeout/missing. **ĐÃ SỬA bằng queue** (chạy lần lượt). Đừng bỏ queue.
 
 ### Luồng (async)
 ```

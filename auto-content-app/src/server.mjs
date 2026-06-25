@@ -60,12 +60,32 @@ function collectFiles(result) {
   return files;
 }
 
+// Hang doi: NotebookLM CLI dung chung 1 "notebook dang chon" -> CHI chay 1 job 1 luc.
+// Nhieu file tha cung luc se chay LAN LUOT, tranh job nay de notebook cua job kia.
+let _chain = Promise.resolve();
+let _depth = 0;
+function enqueue(fn) {
+  _depth++;
+  if (_depth > 1) log(`[queue] ${_depth - 1} job dang cho truoc`);
+  const wait = _chain;
+  let release;
+  _chain = new Promise((r) => (release = r));
+  return wait.then(async () => {
+    try {
+      return await fn();
+    } finally {
+      _depth--;
+      release();
+    }
+  });
+}
+
 // Sinh o nen cho che do async, xong thi callback ket qua sang RESULT_WEBHOOK_URL.
 async function runJobAsync(jobInput) {
   const cb = process.env.RESULT_WEBHOOK_URL;
   const source = jobInput.filename || jobInput.title;
   try {
-    const result = await generateBatch(jobInput);
+    const result = await enqueue(() => generateBatch(jobInput));
     const files = collectFiles(result);
     log(`async xong "${source}": ${files.length} file, missing: ${result.missing.join(",") || "khong"}`);
     if (cb) {
@@ -185,7 +205,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
-      const result = await generateBatch(jobInput);
+      const result = await enqueue(() => generateBatch(jobInput));
       const files = collectFiles(result);
       return json(res, result.ok ? 200 : 207, { ...result, files });
     } catch (e) {
