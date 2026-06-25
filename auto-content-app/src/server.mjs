@@ -60,6 +60,10 @@ function collectFiles(result) {
   return files;
 }
 
+// Luoi an toan: 1 loi bat ngo (vd stream/CLI) KHONG duoc lam sap ca server.
+process.on("uncaughtException", (e) => log(`[uncaughtException] ${e?.stack || e}`));
+process.on("unhandledRejection", (e) => log(`[unhandledRejection] ${e?.stack || e}`));
+
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, `http://localhost:${PORT}`);
 
@@ -75,9 +79,16 @@ const server = http.createServer(async (req, res) => {
     }
     res.writeHead(200, {
       "Content-Type": MIME[path.extname(abs).toLowerCase()] || "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${path.basename(abs)}"`,
+      "Content-Length": fs.statSync(abs).size,
     });
-    return fs.createReadStream(abs).pipe(res);
+    const stream = fs.createReadStream(abs);
+    stream.on("error", (e) => {
+      log(`  loi stream file ${abs}: ${e.message}`);
+      if (!res.headersSent) res.writeHead(500);
+      res.destroy();
+    });
+    res.on("error", () => stream.destroy()); // client ngat -> dung doc, KHONG sap app
+    return stream.pipe(res);
   }
 
   if (req.method === "POST" && u.pathname === "/generate") {
