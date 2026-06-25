@@ -1,201 +1,170 @@
-# HANDOFF_2 — auto-content-app: trạng thái hiện tại & việc tiếp theo
+# HANDOFF — auto-content-app (TRẠNG THÁI: ĐANG CHẠY HOÀN CHỈNH)
 
-> Dùng để mở Claude Code (PowerShell) làm tiếp khi gần hết credit.
-> Gói TẤT CẢ: đã làm gì, đang kẹt ở đâu, IDs cần dùng, MCP nào cần kết nối, và blueprint Make sẵn sàng dán.
-
----
-
-## 0. TL;DR — đang ở đâu
-
-- **App `auto-content-app`**: ĐÃ XONG code, đã test, đã merge vào `main`. Sinh video/audio/mindmap/pptx/pdf/image
-  từ file học liệu, fallback 3 provider, chọn nhiều loại, chạy hàng loạt từ 1 file theo marker.
-- **Make scenario** (watch Drive → /generate → upload Drive → Gmail): blueprint ĐÃ DỰNG XONG và đúng,
-  nhưng **CHƯA tạo được** vì kẹt 1 thứ: connection Google Drive hiện tại sai loại (xem mục 3).
-- **Vercel deploy 404**: SAI NỀN TẢNG. App này KHÔNG chạy được trên Vercel (xem mục 2). Cần VPS.
-- **Thư mục Drive**: đã tạo sẵn input/output (mục 4).
+> Cập nhật liên tục. Mở Claude Code (PowerShell/web) ở bất kỳ tài khoản nào → đọc file này là tiếp tục được.
+> Repo: `namngocna3-jpg/dsafdfd`, nhánh `claude/wizardly-bell-fxnsal`, code trong `auto-content-app/`.
 
 ---
 
-## 1. Repo & nhánh
+## 0. TÓM TẮT — hệ thống làm gì & đang ở đâu
 
-- Repo: `namngocna3-jpg/dsafdfd`
-- Nhánh phát triển: `claude/wizardly-bell-fxnsal` (đã push)
-- `main`: đã tạo, **PR #1 đã merge** → `main` chứa toàn bộ app hoàn chỉnh.
-- Code app nằm trong thư mục `auto-content-app/`.
+Tự động: **thả file học liệu vào Google Drive → sinh video/audio/mindmap/pptx/pdf/ảnh bằng NotebookLM → trả file về Drive + email.**
 
-Lấy code: `git clone` repo, `git checkout main` (hoặc nhánh trên).
+**TRẠNG THÁI: CHẠY ĐƯỢC A→Z.** Đã nghiệm thu: mindmap (png+html), pptx, image qua chế độ async.
+Còn lại tùy chọn: thêm loại `report` (text), đổi APP_TOKEN dài hơn, xử lý .docx.
 
----
-
-## 2. ⚠️ VỤ VERCEL 404 — đọc kỹ
-
-Màn hình Vercel báo `404 NOT_FOUND` vì **app này không phải web tĩnh/serverless** — nó là **Node HTTP
-server chạy nền dài hạn**, và 2/3 provider (NotebookLM A & B) cần **gọi CLI subprocess + trình duyệt thật
-(Chrome) + cookie Google**, mỗi job chạy hàng chục phút. Vercel (serverless, timeout ngắn, không có browser,
-không chạy được `child_process` kiểu này) **không thể chạy app**. Vì vậy Vercel chỉ build xong rồi 404 ở `/`.
-
-**Phải deploy lên host chạy server dài hạn có Chrome:**
-- VPS (Ubuntu) cài Node ≥18 + Chrome + `xvfb-run`, chạy `xvfb-run -a node src/server.mjs`.
-- Hoặc Railway/Render/Fly.io với Docker (cài chromium). NotebookLM vẫn cần browser → ưu tiên VPS.
-- Đặt sau domain/Cloudflare Tunnel để có URL public HTTPS cho Make gọi vào.
-
-> Nếu chỉ muốn test nhanh KHÔNG cần A/B: chạy với `SURFSENSE_MODE=make` hoặc `rest` — nhưng vẫn nên là
-> host server dài hạn, không phải Vercel.
-
-Cần đặt ENV khi deploy (xem `auto-content-app/.env.example`), QUAN TRỌNG:
-- `APP_TOKEN` = chuỗi bí mật (Make gửi kèm `Authorization: Bearer <APP_TOKEN>`).
-- `PUBLIC_BASE_URL` = URL public của app (để tạo link `/files/...` cho Make tải kết quả).
-- `PROVIDER_ORDER`, `ENABLE_*`, `SURFSENSE_MODE`, `MAKE_WEBHOOK_URL` (nếu mode=make), v.v.
-
----
-
-## 3. ⛔ BLOCKER DUY NHẤT của Make scenario: connection Google Drive sai loại
-
-Khi gọi tạo scenario, Make báo:
+### Luồng (async)
 ```
-Provided account '5812910' is not compatible with 'google-drive:watchFilesInAFolder' module.
+Drive input ──watch──> Make Scenario 1 ──POST /generate?async=1──> VPS app (tra ve 202 ngay)
+                                                                      │ sinh o nen (vai phut)
+                                                                      ▼
+Drive output + email <── Make Scenario 2 <──webhook callback (files[])── VPS app
 ```
-**Nguyên nhân:** module `google-drive@4` cần connection **loại `google-restricted`** (hoặc `google-drive`),
-trong khi connection sẵn có (`5812910`, `5815303`) là loại `google` chung (đang dùng cho Forms/Sheets).
-
-**Cách xử lý (PHẢI làm trên giao diện Make, OAuth — không tạo qua API/headless được):**
-1. Vào Make → Connections → **Add** → chọn **Google Drive** (sẽ là loại `google-restricted`).
-2. Đăng nhập `namngocna3@gmail.com`, cấp quyền Drive.
-3. Ghi lại **connection id mới** (gọi nó là `DRIVE_CONN_ID`).
-4. Tạo scenario bằng blueprint ở mục 5, thay tất cả `__IMTCONN__: 5812910` → `DRIVE_CONN_ID`.
-
-> Gmail connection `5813497` (google-email) có thể vẫn OK cho module gửi mail; nếu báo không tương thích
-> thì tạo thêm connection Gmail mới tương tự.
 
 ---
 
-## 4. IDs cần dùng (đã có sẵn)
+## 1. VPS (nơi chạy app + NotebookLM)
 
+- IP: **103.72.57.56**, Ubuntu 24.04, user `root`. SSH: `ssh root@103.72.57.56`.
+- ⚠️ Mật khẩu root từng bị lộ trong chat → NÊN đổi (`passwd`). (Mật khẩu cũ user cấp: `6nu3#4#vmNPwbbC`).
+- App đặt tại `/root/dsafdfd/auto-content-app` (clone từ GitHub, đang ở nhánh `claude/wizardly-bell-fxnsal`).
+- Node `/usr/bin/node` (v22), npm deps đã cài (gồm `puppeteer-core`).
+
+### Chạy bằng systemd (KHÔNG dùng pm2 nữa — pm2 để lại tiến trình mồ côi gây EADDRINUSE)
+2 service:
+- `/etc/systemd/system/xvfb.service` — màn hình ảo `:99` (NotebookLM + chromium cần).
+- `/etc/systemd/system/autocontent.service` — chạy `node src/server.mjs`, `Environment=DISPLAY=:99`, `HOME=/root`, `Restart=always`, WorkingDirectory=app dir.
+- Cả 2 `enable --now` → **tự chạy lại sau reboot**.
+
+Lệnh vận hành:
+```bash
+systemctl restart autocontent          # sau khi git pull
+systemctl status autocontent
+journalctl -u autocontent -f            # xem log realtime
+journalctl -u autocontent -n 50 --no-pager
+```
+
+### NotebookLM CLI (provider chính)
+- Cài: `pipx install "notebooklm-py[browser]"` (binary `notebooklm` tại `/root/.local/bin/notebooklm`, v0.7.2).
+- Chromium của Playwright: `~/.cache/ms-playwright/chromium-1223/chrome-linux64/chrome` (đã `playwright install --with-deps chromium`).
+- **Đã đăng nhập Google `pdanh025@gmail.com`** (auth lưu ở `/root/.notebooklm/profiles/default/storage_state.json`).
+  - Cách đăng nhập (khi cookie hết hạn): tạo VNC tạm xem màn hình ảo rồi `DISPLAY=:99 notebooklm login`:
+    ```bash
+    apt install -y x11vnc xvfb fluxbox
+    Xvfb :99 -screen 0 1280x800x24 & DISPLAY=:99 fluxbox &
+    x11vnc -display :99 -localhost -forever -rfbport 5900 -nopw -xkb &
+    # tu Windows: ssh -L 5900:localhost:5900 root@103.72.57.56 ; mo VNC Viewer -> localhost:5900
+    DISPLAY=:99 notebooklm login        # dang nhap Google trong VNC; neu khong go duoc: dung xdotool type
+    DISPLAY=:99 notebooklm doctor        # "All checks passed" = OK
+    pkill x11vnc                         # tat VNC sau khi xong (Xvfb giu lai cho systemd)
+    ```
+  - Kiểm tra auth: `DISPLAY=:99 notebooklm auth check`; `DISPLAY=:99 notebooklm doctor`.
+
+### File `.env` (tại `/root/dsafdfd/auto-content-app/.env`) — các biến quan trọng
+```
+PORT=8787
+APP_TOKEN=11261320                         # Make gui Bearer 11261320 (NEN doi dai hon)
+PUBLIC_BASE_URL=http://103.72.57.56:8787   # de tao link file cho Make tai
+OUT_DIR=./out
+DEFAULT_KINDS=video,mindmap                 # khi ten file khong khai [..]
+PROVIDER_ORDER=notebooklm-py,surfsense
+ENABLE_NOTEBOOKLM_PY=true
+NOTEBOOKLM_PY_BIN=/root/.local/bin/notebooklm
+NOTEBOOKLM_HL=vi                            # NGON NGU dau ra = tieng Viet
+RESULT_WEBHOOK_URL=https://hook.eu1.make.com/xofr9322lmuq62gdg5lhh5buv2wkejxs   # callback async
+SURFSENSE_MODE=make                         # surfsense chi la fallback (chua dung)
+```
+> App đọc `.env` qua `src/loadenv.mjs` (GHI ĐÈ process.env — miễn nhiễm env tồn đọng).
+
+### Test nhanh trên VPS
+```bash
+curl -s http://localhost:8787/health    # {"ok":true}
+# dong bo (cho ket qua trong response):
+curl -s -X POST "http://localhost:8787/generate" -H "Authorization: Bearer 11261320" -H "Content-Type: application/json" -d '{"filePath":"/root/test.txt","title":"t","kinds":"mindmap"}'
+# async (tra ve 202 ngay, callback webhook khi xong):
+curl -s -X POST "http://localhost:8787/generate?async=1" -H "Authorization: Bearer 11261320" -H "Content-Type: application/json" -d '{"filePath":"/root/test.txt","title":"t","kinds":"mindmap,pptx,image"}'
+```
+
+---
+
+## 2. Make (orchestration) — team `1212779`, org `6869768`
+
+### Scenario 1 — id `6325429` "auto-content 1 — Drive → VPS /generate (async)" (ACTIVE)
+- Module 1 `google-drive:watchFilesInAFolder` (conn 8523077, folder input) — quét mỗi 900s.
+- Module 2 `google-drive:getAFile` — tải bytes file.
+- Module 3 `http:ActionSendData` POST `http://103.72.57.56:8787/generate` với qs `async=1`, `filename={{1.name}}`, `title={{1.name}}`, header `Authorization: Bearer 11261320`, body raw `{{2.data}}`. Trả 202 ngay → KHÔNG timeout.
+
+### Scenario 2 — id `6327587` "auto-content 2 — webhook ket qua → Drive" (ACTIVE)
+- Module 1 `gateway:CustomWebHook` (hook `3292485`, URL `https://hook.eu1.make.com/xofr9322lmuq62gdg5lhh5buv2wkejxs`).
+- Module 2 `google-email:ActionSendEmail` (conn 5815303) → email tóm tắt tới `pdanh025@gmail.com`.
+- Module 3 `builtin:BasicFeeder` lặp `{{1.files}}`.
+- Module 4 `http:ActionSendData` GET `{{3.url}}` tải từng file.
+- Module 5 `google-drive:uploadAFile` (conn 8523077) → upload vào folder output, filename `{{3.name}}`, data `{{4.data}}`.
+
+> Lưu ý module HTTP (legacy) BẮT BUỘC có đủ cờ bool: serializeUrl, shareCookies, rejectUnauthorized, followRedirect, followAllRedirects, useQuerystring, gzip, useMtls (đều false trừ rejectUnauthorized/followRedirect/gzip=true). timeout=300.
+
+### IDs Make
 | Thứ | Giá trị |
 |---|---|
-| Make Organization | `6869768` |
-| Make Team ("My Team") | `1212779` |
-| Connection Google (namngocna3) — **SAI loại cho Drive v4** | `5812910` |
-| Connection Google (pdanh025) | `5815303` |
-| Connection Gmail (google-email, trogiangthaytung) | `5813497` |
-| Drive folder cha `auto-content` | `1RGtrwezO8eAedEF6gvASTRdyFOrbSoOc` |
-| Drive folder **input** (thả file vào) | `1sehwRLTzeXetHk5_HzpLHW9IGuEWlyc3` |
-| Drive folder **output** (lưu kết quả) | `1NBBPa1FXwZ-tTlNmcmlg-3Mw469-EPvT` |
-| Email nhận thông báo | `pdanh025@gmail.com` |
-| Google Drive MCP account | `namngocna3@gmail.com` (trùng connection 5812910) |
+| Team / Org | `1212779` / `6869768` |
+| Connection Google Drive (pdanh025) | `8523077` |
+| Connection Google email (pdanh025, type google) | `5815303` |
+| Connection Gmail (google-email) | `5813497` *(KHÔNG dùng cho ActionSendEmail — module cần type `google`)* |
+| Webhook hook id / URL | `3292485` / `https://hook.eu1.make.com/xofr9322lmuq62gdg5lhh5buv2wkejxs` |
+| Drive folder **input** | `1ErjgXd1K8kTRtxGJIJ-ZHGThHknyN9G0` (trong Drive pdanh025) |
+| Drive folder **output** | `152CFCrPKhyE_xhEkNfGgg5viNxFVF_i6` (trong Drive pdanh025) |
+| Email nhận | `pdanh025@gmail.com` |
 
 ---
 
-## 5. BLUEPRINT MAKE (đã đúng, chỉ cần thay connection + URL rồi tạo)
+## 3. Cách dùng hằng ngày
+1. Thả file (txt/pdf — KHÔNG nên .docx) vào Drive **input**.
+2. Đặt tên kèm loại: `Tên bài [mindmap,pptx,video].pdf` (loại: video, audio, mindmap, pptx, pdf, image).
+   - Không khai → dùng `DEFAULT_KINDS`.
+3. Scenario 1 quét mỗi 15 phút (hoặc bấm **Run once**) → app sinh ở nền → vài phút sau file vào Drive **output** + email.
+- Thời gian: mindmap ~1', pptx/image ~3' mỗi loại, video/audio 5–15'. Nhiều loại = cộng dồn.
 
-Luồng 7 module: `watch Drive(1) → download(2) → POST /generate(3) → Gmail báo(4) → iterate files(5) →
-download từng file kết quả(6) → upload Drive output(7)`.
+## 4. Code (trong `auto-content-app/src/`)
+- `server.mjs` — HTTP: `/health`, `/kinds`, `/files/<rel>` (phục vụ file, có xử lý lỗi stream + Content-Length), `POST /generate` (JSON hoặc raw body; `?async=1` → 202 + chạy nền `runJobAsync` → callback `RESULT_WEBHOOK_URL`). Có `uncaughtException/unhandledRejection` guard.
+- `loadenv.mjs` — nạp `.env` GHI ĐÈ (import đầu tiên).
+- `orchestrator.mjs` — tách segment + fallback theo TỪNG loại qua các provider.
+- `providers/notebooklmPy.mjs` — provider chính. MAP loại→lệnh CLI:
+  - generate có `--wait --timeout` cho video/audio/slide-deck/infographic (mặc định CLI là `--no-wait`!).
+  - mindmap: `generate mind-map --kind note-backed --language vi` (đồng bộ); download `mind-map`.
+  - slide-deck: download cần `--format pptx|pdf`.
+  - image = `infographic`.
+  - **mindmap tự render thêm HTML + PNG** (qua `mindmaphtml.mjs` + puppeteer-core/chromium); output là MẢNG [png, html].
+  - Tên file kết quả = `<tên file input> - <loại>.<ext>` (hàm baseName).
+- `mindmaphtml.mjs` — JSON mindmap → markdown → HTML markmap (`renderMindmapHtml`) + chụp PNG (`renderMindmapPng` dùng chromium).
+- `kinds.mjs`, `segments.mjs`, `util.mjs` — chuẩn hoá loại, tách marker, chạy CLI.
+- `providers/{nlmCli,surfsense}.mjs` — provider B (chưa cài) / C (surfsense, chỉ fallback).
 
-Tạo qua Make MCP: `scenarios_create` với `teamId=1212779`, `scheduling={"type":"indefinitely","interval":900}`,
-`confirmed=true`, và `blueprint` dưới đây. **Trước khi tạo: thay `5812910`→DRIVE_CONN_ID mới (mục 3),
-thay `https://YOUR-APP-DOMAIN`→URL app thật, thay `YOUR_APP_TOKEN`→APP_TOKEN đã đặt khi deploy.**
+## 5. Các bản vá đã làm (lịch sử quan trọng)
+1. healthCheck dùng `auth check` (không phải `--test`).
+2. Bỏ `--wait` sai cho mind-map; thêm `--wait`+`--format` đúng cho các loại khác.
+3. `loadenv` ghi đè `.env` (sửa lỗi ENABLE bị kẹt false do env tồn đọng).
+4. `/files` xử lý lỗi stream → hết crash/ECONNRESET; guard uncaughtException.
+5. Đổi pm2 → **systemd** (hết tiến trình mồ côi/EADDRINUSE, sống lại sau reboot).
+6. Ngôn ngữ `vi`; tên file theo input; mindmap ra PNG+HTML.
+7. **Async** + webhook + Scenario 2 (Make không timeout với job dài/nhiều loại).
 
-```json
-{
-  "name": "auto-content — Drive → /generate → Drive",
-  "flow": [
-    {"id":1,"module":"google-drive:watchFilesInAFolder","version":4,
-     "parameters":{"__IMTCONN__":5812910,"select":"create","destination":"drive","folderId":"1sehwRLTzeXetHk5_HzpLHW9IGuEWlyc3","mimeType":"all","limit":2},"mapper":{}},
-    {"id":2,"module":"google-drive:getAFile","version":4,
-     "parameters":{"__IMTCONN__":5812910},"mapper":{"select":"map","file":"{{1.id}}"}},
-    {"id":3,"module":"http:ActionSendData","version":3,
-     "parameters":{"handleErrors":true,"useNewZLibDeCompress":true},
-     "mapper":{"url":"https://YOUR-APP-DOMAIN/generate","method":"post",
-       "headers":[{"name":"Authorization","value":"Bearer YOUR_APP_TOKEN"}],
-       "qs":[{"name":"filename","value":"{{1.name}}"},{"name":"title","value":"{{1.name}}"}],
-       "bodyType":"raw","contentType":"custom","customContentType":"application/octet-stream",
-       "data":"{{2.data}}","parseResponse":true}},
-    {"id":4,"module":"google-email:ActionSendEmail","version":1,
-     "parameters":{"account":5813497},
-     "mapper":{"to":["pdanh025@gmail.com"],"subject":"auto-content xong: {{1.name}}",
-       "html":"File: {{1.name}}<br>Segments: {{3.data.segments}}<br>Kinds: {{join(3.data.kinds; \", \")}}<br>Missing: {{join(3.data.missing; \", \")}}"}},
-    {"id":5,"module":"builtin:BasicFeeder","version":1,"mapper":{"array":"{{3.data.files}}"}},
-    {"id":6,"module":"http:ActionSendData","version":3,
-     "parameters":{"handleErrors":true,"useNewZLibDeCompress":true},
-     "mapper":{"url":"{{5.url}}","method":"get","bodyType":"","parseResponse":false}},
-    {"id":7,"module":"google-drive:uploadAFile","version":4,
-     "parameters":{"__IMTCONN__":5812910},
-     "mapper":{"select":"map","folderId":"1NBBPa1FXwZ-tTlNmcmlg-3Mw469-EPvT","filename":"{{5.name}}","data":"{{6.data}}"}}
-  ],
-  "metadata":{"version":1}
-}
-```
+## 6. Sự cố thường gặp
+- **App không lên / EADDRINUSE**: `systemctl restart autocontent`; nếu kẹt cổng: `fuser -k 8787/tcp; pkill -9 -f server.mjs` rồi restart.
+- **Sinh ra tiếng Anh**: kiểm tra `NOTEBOOKLM_HL=vi` trong `.env` + restart.
+- **NotebookLM lỗi auth**: đăng nhập lại qua VNC (mục 1).
+- **Make timeout**: phải dùng `?async=1` (scenario 1 đã cấu hình). Đừng quay lại đồng bộ cho video.
+- **.docx lỗi source**: đổi sang PDF.
+- **Không thấy output**: chờ đủ thời gian sinh; xem `journalctl -u autocontent` có dòng `async xong` + `da callback webhook`; kiểm tra Scenario 2 History trên Make.
 
-**Lưu ý về luồng:**
-- Module 3 gửi file dạng **raw body** kèm query `?filename=&title=`. App đọc `kinds` từ tên file
-  (vd `Bai 1 [video,pptx].pdf`) hoặc từ marker trong file text, hoặc dùng `DEFAULT_KINDS`. Muốn ép loại
-  thì thêm `{"name":"kinds","value":"video,pptx"}` vào `qs` module 3.
-- Module 4 (Gmail) đặt TRƯỚC iterator nên gửi **1 email tổng kết/file** (không spam mỗi loại).
-- Iterator (5) lặp qua `files[]` mà app trả về → mỗi file: tải (6) rồi upload vào output (7).
-- **Khi app dùng `SURFSENSE_MODE=make`**: `files[]` sẽ RỖNG (SurfSense/Make tự sinh & giao), nên iterator
-  không upload gì — đó là chủ ý. Lúc đó việc giao file do scenario SurfSense riêng lo (chưa dựng).
-  Để scenario này upload được file thật, app phải sinh bằng provider A/B hoặc SurfSense `rest`.
+## 7. MCP cần kết nối (khi mở Claude Code chỗ khác)
+- **GitHub** (hoặc git+gh) — repo `namngocna3-jpg/dsafdfd`.
+- **Make** — org `6869768`, team `1212779` (sửa scenario/hook).
+- **Google Drive** — account `namngocna3@gmail.com` (tạo/kiểm thư mục) — LƯU Ý: folder app dùng nằm trong Drive `pdanh025`, MCP namngocna3 không thấy; thao tác folder pdanh025 làm tay.
+- Không dùng Vercel (app cần server dài hạn + chromium, không chạy serverless).
 
----
+## 8. Tùy chọn còn lại
+- Thêm loại **`report`** (NotebookLM `generate report` → markdown) vào `kinds.mjs` + MAP.
+- Đổi `APP_TOKEN` dài hơn (sửa cả `.env` VPS lẫn header Bearer trong Scenario 1 module 3).
+- Xuất video/audio đã verify lệnh nhưng CHƯA chạy thực tế end-to-end (mới test mindmap/pptx/image). Nên test 1 lần `[video]` để chắc regex/lệnh.
 
-## 6. App đã làm gì (tóm tắt code đã có trong repo)
-
-Thư mục `auto-content-app/`:
-- `src/server.mjs` — HTTP: `GET /health`, `GET /kinds`, `GET /files/<relpath>` (phục vụ file kết quả),
-  `POST /generate` (nhận **JSON** {filePath|fileUrl|driveFileId,title,kinds} HOẶC **raw body** kèm
-  `?filename=&title=&kinds=`). Response thêm `files[]` {segment,kind,provider,name,url} để Make upload.
-- `src/cli.mjs` — chạy tay: `node src/cli.mjs <file> [title] [--kinds=video,pptx]`.
-- `src/orchestrator.mjs` — tách segment + **fallback theo TỪNG LOẠI** (provider nào làm được loại nào thì làm,
-  loại thiếu rớt sang provider kế), trả `missing`.
-- `src/kinds.mjs` — chuẩn hoá loại (video/audio/mindmap/pptx/pdf/image) + alias EN/VI + `kindsFromName`.
-- `src/segments.mjs` — tách 1 file text thành nhiều job theo marker `BEGIN/END` (hỗ trợ `BẮT ĐẦU/KẾT THÚC`),
-  mỗi mục tự khai báo `title` + `kinds`.
-- `src/providers/{notebooklmPy,nlmCli,surfsense}.mjs` — 3 provider, mỗi cái có `supports(kind)` + `generate()`.
-- `src/util.mjs` — run CLI, timeout, parseId, ensureLocalFile, sanitize.
-- `.env.example`, `README.md`.
-
-**Đã test (mock):** kindsFromName, parseSegments (EN+VI marker), end-to-end 1 file→3 segment→Make webhook
-nhận đúng kinds, raw upload + /files serving (mime đúng, chặn path traversal).
-
-**CHƯA verify (cần host thật có Chrome + cookie Google + SurfSense):**
-1. Regex `parseId()` của output CLI NotebookLM (A & B) — chạy thật rồi chỉnh; ưu tiên cờ `--json` nếu có.
-2. Lệnh `nlm download` cho mindmap/pptx (có thể chỉ hỗ trợ audio/video).
-3. SurfSense mode=rest: mở `/docs` của instance điền `SS_GENERATE_PATH` + `SS_GENERATE_BODY`.
-4. Tên gói npm provider B (`notebooklm-mcp-cli`) + binary `nlm`.
-
----
-
-## 7. VIỆC TIẾP THEO (thứ tự nên làm)
-
-1. **Deploy app lên VPS** (KHÔNG Vercel — mục 2). Đặt `APP_TOKEN`, `PUBLIC_BASE_URL`, `SURFSENSE_MODE`.
-   Test: `curl https://<app>/health` → `{ok:true}`.
-2. **Tạo connection Google Drive (`google-restricted`) trong Make** (mục 3) → lấy `DRIVE_CONN_ID`.
-3. **Tạo Make scenario** bằng blueprint mục 5 (thay connection + URL + token). Bật scenario.
-4. **Test**: thả 1 file (vd `Bai 1 [mindmap].txt` có marker) vào Drive folder input
-   `1sehwRLTzeXetHk5_HzpLHW9IGuEWlyc3` → chờ poll 15 phút (hoặc Run once) → kiểm tra output folder + email.
-5. Cài & cấu hình provider A/B trên VPS (cookie Google) nếu muốn chất lượng NotebookLM; chỉnh `parseId()`.
-6. (Tuỳ chọn) Dựng scenario SurfSense riêng nếu chạy `SURFSENSE_MODE=make`.
-
----
-
-## 8. MCP CẦN KẾT NỐI (khi mở Claude Code bên PowerShell)
-
-| MCP | Dùng để | Ghi chú |
-|---|---|---|
-| **GitHub** | đọc/sửa/push code repo `namngocna3-jpg/dsafdfd`, PR | bản remote dùng `mcp__github__*`; bản local PowerShell có thể dùng `git` + `gh` CLI |
-| **Make** | tạo/sửa/bật scenario (`scenarios_create`, `scenarios_activate`, `app-module_get`...) | org `6869768`, team `1212779` |
-| **Google Drive** | tạo/kiểm tra thư mục, kiểm tra file kết quả | account `namngocna3@gmail.com` |
-| (Vercel — bỏ) | KHÔNG dùng để chạy app | chỉ gây hiểu nhầm; app cần VPS |
-
-> Nếu PowerShell Claude Code không có sẵn các MCP này: cấu hình trong `~/.claude.json` / settings, hoặc
-> thao tác Make/Drive bằng tay trên giao diện web (blueprint mục 5 dán trực tiếp khi tạo scenario:
-> "Create a new scenario" → menu → Import Blueprint).
-
----
-
-## 9. CÂU MỞ CHAT MỚI (dán vào Claude Code PowerShell)
-
-> "Tôi có repo `namngocna3-jpg/dsafdfd`, thư mục `auto-content-app` (Node orchestrator sinh học liệu,
-> fallback NotebookLM→SurfSense, đã merge `main`). Đọc `auto-content-app/HANDOFF_2.md` để biết trạng thái.
-> Việc cần: deploy app lên VPS (KHÔNG Vercel), tạo connection Google Drive google-restricted trong Make,
-> rồi tạo Make scenario theo blueprint mục 5. Giúp tôi [bước số ...]."
+## 9. Câu mở khi tiếp tục ở phiên mới
+> "Đọc `auto-content-app/HANDOFF_2.md` repo `namngocna3-jpg/dsafdfd`. Hệ thống auto-content (Drive→VPS NotebookLM→Drive, async qua 2 Make scenario) đang chạy. VPS 103.72.57.56 (systemd: autocontent + xvfb). Giúp tôi [việc cần]."
