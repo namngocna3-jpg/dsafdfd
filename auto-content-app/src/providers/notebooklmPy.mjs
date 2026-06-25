@@ -6,14 +6,17 @@ import { run, parseId, log } from "../util.mjs";
 const BIN = process.env.NOTEBOOKLM_PY_BIN || "notebooklm";
 const GEN_TIMEOUT = Number(process.env.NLPY_GEN_TIMEOUT_MS || 1_800_000); // 30 phut/loai
 
-// canonical kind -> { token CLI, duoi file tai ve }
+// canonical kind -> { gen: args lenh `generate`, dl: subcommand `download`, ext: duoi file }
+// CLI 0.7.x: generate KHONG co --wait. mind-map note-backed la dong bo; video/audio/slide-deck
+// tu poll den khi xong. image lay qua `infographic`.
 const MAP = {
-  video: { token: "video", ext: "mp4" },
-  audio: { token: "audio", ext: "mp3" },
-  mindmap: { token: "mind-map", ext: "json" },
-  pptx: { token: "slide-deck", ext: "pptx" },
-  pdf: { token: "slide-deck", ext: "pdf" }, // slide-deck tai ve dang pdf (best-effort, xem TODO)
-  // image: NotebookLM khong sinh anh minh hoa rieng -> khong ho tro
+  video: { gen: ["video"], dl: "video", ext: "mp4" },
+  audio: { gen: ["audio"], dl: "audio", ext: "mp3" },
+  // pin note-backed (JSON dong bo); mac dinh se doi sang 'interactive' o v0.8.0
+  mindmap: { gen: ["mind-map", "--kind", "note-backed"], dl: "mind-map", ext: "json" },
+  pptx: { gen: ["slide-deck"], dl: "slide-deck", ext: "pptx" },
+  pdf: { gen: ["slide-deck"], dl: "slide-deck", ext: "pdf" }, // download tu nhan dinh dang theo duoi file
+  image: { gen: ["infographic"], dl: "infographic", ext: "png" }, // NotebookLM sinh anh qua infographic
 };
 
 export default {
@@ -53,9 +56,9 @@ export default {
       const m = MAP[kind];
       if (!m) continue;
       try {
-        await run(BIN, ["generate", m.token, "--wait"], { timeoutMs: GEN_TIMEOUT });
+        await run(BIN, ["generate", ...m.gen], { timeoutMs: GEN_TIMEOUT });
         const out = path.join(outDir, `${kind}.${m.ext}`);
-        await run(BIN, ["download", m.token, out], { timeoutMs: 600_000 });
+        await run(BIN, ["download", m.dl, out], { timeoutMs: 600_000 });
         outputs[kind] = out;
       } catch (e) {
         log(`    notebooklm-py bo qua kind '${kind}': ${e.message}`);
