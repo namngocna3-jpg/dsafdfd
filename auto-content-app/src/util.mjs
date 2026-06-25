@@ -70,7 +70,7 @@ export async function ensureLocalFile({ filePath, fileUrl, title, outDir }) {
   return dest;
 }
 
-function sanitize(s) {
+export function sanitize(s) {
   return (s || "").replace(/[^\w.-]+/g, "_").slice(0, 80);
 }
 
