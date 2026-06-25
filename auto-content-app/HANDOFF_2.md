@@ -3,6 +3,21 @@
 > Cập nhật liên tục. Mở Claude Code (PowerShell/web) ở bất kỳ tài khoản nào → đọc file này là tiếp tục được.
 > Repo: `namngocna3-jpg/dsafdfd`, nhánh `claude/wizardly-bell-fxnsal`, code trong `auto-content-app/`.
 
+## ⭐ KHI QUAY LẠI LÀM TIẾP (đọc trước tiên)
+App chạy bằng **systemd** trên VPS → đóng cmd/SSH KHÔNG tắt app; job async đang chạy vẫn xong & tự đẩy lên Drive.
+
+**Việc dở đang chờ nghiệm thu:** test `kinds=pptx,video` (job tên "test full") để xác nhận:
+- pptx ra file (lần trước hỏng do 2 job đè nhau — ĐÃ thêm queue, cần xác nhận lại).
+- video ra `.mp4` (CHƯA verify end-to-end lần nào).
+
+**Khi quay lại, làm theo thứ tự:**
+1. SSH vào VPS: `ssh root@103.72.57.56`.
+2. Xem job "test full" đã xong chưa: `journalctl -u autocontent -n 60 --no-pager | grep -iE "test full|xong|callback|bo qua|video|pptx"`.
+3. Kiểm tra Drive output có `test full - pptx.pptx` + `test full - video.mp4` chưa.
+   - Nếu CÓ cả 2 → **đủ 6/6 loại, xong hẳn** → đánh dấu hoàn thành.
+   - Nếu thiếu/chưa chạy → chạy lại test (lệnh ở mục 1 "Test nhanh", kinds=pptx,video) và chờ ~10–13'.
+4. (Tùy chọn còn lại ở mục 8.)
+
 ---
 
 ## 0. TÓM TẮT — hệ thống làm gì & đang ở đâu
@@ -16,8 +31,10 @@ Tự động: **thả file học liệu vào Google Drive → sinh video/audio/m
 - ✅ 6 loại sinh được: mindmap(png+html), pptx, pdf, image, video*, audio* (*video/audio đã có lệnh đúng, ĐANG nghiệm thu thực tế).
 - ✅ Tiếng Việt, tên file theo input, mindmap ra PNG+HTML.
 - ✅ Async + webhook + 2 Make scenario (Make hết timeout).
-- ✅ **Hàng đợi (queue)**: NotebookLM CLI chỉ chạy 1 job/lúc → các file xếp hàng chạy lần lượt (sửa lỗi 2 job đè nhau làm timeout pptx).
-- ⏳ ĐANG: test video end-to-end (job đầu bị job khác đè nên cần test lại sau khi có queue).
+- ✅ **Hàng đợi (queue)**: NotebookLM CLI chỉ chạy 1 job/lúc → các file xếp hàng chạy lần lượt (sửa lỗi 2 job đè nhau làm timeout pptx). Đã push (commit 6f2e4ef).
+- ✅ Đã giao Drive thực tế: mindmap.png + mindmap.html + image.png (từ file "Bài 1").
+- ⏳ CHƯA verify: **pptx** (lần trước timeout do bị đè — chờ test lại với queue) và **video .mp4** (chưa chạy xong lần nào). → job "test full" (kinds=pptx,video) đang/để chờ nghiệm thu (xem mục ⭐ đầu file).
+- ⚠️ Nhớ: sau khi `git pull`, PHẢI `systemctl restart autocontent` thì code queue mới có hiệu lực.
 
 ### VIỆC TIẾP THEO (làm gì tiếp)
 1. **Test lại video** sau khi deploy queue: thả/curl 1 file `[video]` ĐƠN LẺ (đừng chạy song song) → chờ 5–10' → xác nhận `test - video.mp4` vào Drive output.
