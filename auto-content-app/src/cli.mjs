@@ -3,6 +3,7 @@
 // Vi du:
 //   node src/cli.mjs bai.pdf "Bai 1" --kinds=video
 //   node src/cli.mjs giaotrinh.txt --kinds=pptx,pdf,mindmap   (file co marker -> chay hang loat)
+import "./loadenv.mjs"; // PHAI dau tien: nap .env truoc khi module khac doc process.env
 import path from "node:path";
 import fs from "node:fs";
 import { generateBatch } from "./orchestrator.mjs";

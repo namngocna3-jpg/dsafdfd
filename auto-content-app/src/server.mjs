@@ -10,6 +10,7 @@
 //            POST /generate?title=...&kinds=...&filename=bai.pdf
 //            Content-Type: application/octet-stream, body = bytes cua file
 //        Response co them `files`: [{ segment, kind, name, url }] de Make upload len Drive.
+import "./loadenv.mjs"; // PHAI dau tien: nap .env truoc khi module khac doc process.env
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
