@@ -23,17 +23,19 @@ function baseName(title) {
   );
 }
 
-// canonical kind -> { gen: args lenh `generate`, dl: subcommand `download`, ext: duoi file }
-// CLI 0.7.x: generate KHONG co --wait. mind-map note-backed la dong bo; video/audio/slide-deck
-// tu poll den khi xong. image lay qua `infographic`.
+// canonical kind -> { gen: args lenh `generate`, dl: args lenh `download` (truoc duong dan), ext }
+// CLI 0.7.x: generate mac dinh --no-wait -> phai them --wait de cho sinh xong moi download.
+// mind-map note-backed la dong bo (khong can --wait). slide-deck download can --format.
+const WT = process.env.NLM_WAIT_TIMEOUT || "1500"; // giay cho video/audio
+const WS = process.env.NLM_WAIT_TIMEOUT_SHORT || "600"; // giay cho slide/infographic
 const MAP = {
-  video: { gen: ["video"], dl: "video", ext: "mp4" },
-  audio: { gen: ["audio"], dl: "audio", ext: "mp3" },
-  // pin note-backed (JSON dong bo); mac dinh se doi sang 'interactive' o v0.8.0
-  mindmap: { gen: ["mind-map", "--kind", "note-backed", "--language", LANG], dl: "mind-map", ext: "json" },
-  pptx: { gen: ["slide-deck"], dl: "slide-deck", ext: "pptx" },
-  pdf: { gen: ["slide-deck"], dl: "slide-deck", ext: "pdf" }, // download tu nhan dinh dang theo duoi file
-  image: { gen: ["infographic"], dl: "infographic", ext: "png" }, // NotebookLM sinh anh qua infographic
+  video: { gen: ["video", "--wait", "--timeout", WT], dl: ["video"], ext: "mp4" },
+  audio: { gen: ["audio", "--wait", "--timeout", WT], dl: ["audio"], ext: "mp3" },
+  // note-backed (JSON dong bo); mac dinh se doi sang 'interactive' o v0.8.0
+  mindmap: { gen: ["mind-map", "--kind", "note-backed", "--language", LANG], dl: ["mind-map"], ext: "json" },
+  pptx: { gen: ["slide-deck", "--wait", "--timeout", WS, "--language", LANG], dl: ["slide-deck", "--format", "pptx"], ext: "pptx" },
+  pdf: { gen: ["slide-deck", "--wait", "--timeout", WS, "--language", LANG], dl: ["slide-deck", "--format", "pdf"], ext: "pdf" },
+  image: { gen: ["infographic", "--wait", "--timeout", WS, "--language", LANG], dl: ["infographic"], ext: "png" },
 };
 
 export default {
@@ -76,7 +78,7 @@ export default {
       try {
         await run(BIN, ["generate", ...m.gen], { timeoutMs: GEN_TIMEOUT });
         let out = path.join(outDir, `${base} - ${kind}.${m.ext}`);
-        await run(BIN, ["download", m.dl, out], { timeoutMs: 600_000 });
+        await run(BIN, ["download", ...m.dl, out], { timeoutMs: 600_000 });
         // mindmap: NotebookLM chi cho JSON -> render HTML (tuong tac) + PNG (xem trong Drive).
         if (kind === "mindmap") {
           try {
