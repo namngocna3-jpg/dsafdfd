@@ -32,11 +32,11 @@ const ALIASES = {
  * Nhan vao string ("video,mindmap"), mang, hoac undefined -> tra ve mang canonical da loc trung.
  * fallback: dung khi khong truyen gi (mac dinh tu DEFAULT_KINDS hoac video+mindmap).
  */
-export function normalizeKinds(input, fallback) {
-  const fb = fallback || (process.env.DEFAULT_KINDS || "video,mindmap");
+// Map 1 chuoi/mang -> mang canonical, KHONG ap fallback (co the rong).
+function toCanonical(input) {
   let arr = input;
-  if (arr == null || arr === "") arr = fb;
   if (typeof arr === "string") arr = arr.split(/[,;\s]+/);
+  if (!Array.isArray(arr)) return [];
   const out = [];
   for (const raw of arr) {
     const key = String(raw || "").trim().toLowerCase();
@@ -44,6 +44,26 @@ export function normalizeKinds(input, fallback) {
     const canon = ALIASES[key];
     if (canon && !out.includes(canon)) out.push(canon);
   }
-  if (!out.length) return normalizeKinds(fb, "video,mindmap");
   return out;
+}
+
+export function normalizeKinds(input, fallback) {
+  const fb = fallback || (process.env.DEFAULT_KINDS || "video,mindmap");
+  const out = input == null || input === "" ? [] : toCanonical(input);
+  if (out.length) return out;
+  return toCanonical(fb).length ? toCanonical(fb) : ["video", "mindmap"];
+}
+
+/**
+ * Doc kinds tu ten file, vd: "Bai 1 [video,pptx].pdf" hoac "Bai 1 __video+mindmap.pdf".
+ * Tra ve chuoi "video,pptx" (de dua vao normalizeKinds) hoac null neu khong thay.
+ */
+export function kindsFromName(name) {
+  if (!name) return null;
+  const m =
+    String(name).match(/[\[(](?:kinds[:=])?\s*([a-z0-9,+\s_-]+?)\s*[\])]/i) ||
+    String(name).match(/__\s*kinds[:=]?\s*([a-z0-9,+_-]+)/i);
+  if (!m) return null;
+  const found = toCanonical(m[1].replace(/\+/g, ","));
+  return found.length ? found.join(",") : null; // null neu trong ngoac khong co loai hop le
 }

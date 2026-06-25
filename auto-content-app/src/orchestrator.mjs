@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { writeFile } from "node:fs/promises";
 import { withTimeout, ensureLocalFile, sanitize, log } from "./util.mjs";
-import { normalizeKinds } from "./kinds.mjs";
+import { normalizeKinds, kindsFromName } from "./kinds.mjs";
 import { loadSegments } from "./segments.mjs";
 import notebooklmPy from "./providers/notebooklmPy.mjs";
 import nlmCli from "./providers/nlmCli.mjs";
@@ -89,7 +89,8 @@ async function generateOne({ filePath, fileUrl, driveFileId, title, kinds, outDi
  * Tu tach segment (neu file text co marker) va chay tung segment.
  */
 export async function generateBatch(input) {
-  const kinds = normalizeKinds(input.kinds);
+  // Uu tien: kinds truyen vao > kinds doc tu ten file (vd "Bai 1 [video,pptx].pdf") > mac dinh.
+  const kinds = normalizeKinds(input.kinds || kindsFromName(input.filename || input.title));
   const baseOut = input.outDir;
 
   // Tai file nguon ve local 1 lan (A/B + tach segment can file that).
