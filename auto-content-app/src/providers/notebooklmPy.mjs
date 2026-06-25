@@ -10,6 +10,19 @@ const GEN_TIMEOUT = Number(process.env.NLPY_GEN_TIMEOUT_MS || 1_800_000); // 30 
 // de cac loai khac (video/audio/slide) cung ra tieng Viet.
 const LANG = process.env.NLM_LANG || process.env.NOTEBOOKLM_HL || "vi";
 
+// Ten file ket qua dat theo title (= ten file input) de de phan biet khi automation.
+// Bo duoi file nguon + ky tu pha duong dan, giu unicode/tieng Viet.
+function baseName(title) {
+  return (
+    String(title || "ket-qua")
+      .replace(/\.[a-z0-9]{1,5}$/i, "") // bo duoi .docx/.pdf/.txt...
+      .replace(/[\/\\\n\r\t]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 100) || "ket-qua"
+  );
+}
+
 // canonical kind -> { gen: args lenh `generate`, dl: subcommand `download`, ext: duoi file }
 // CLI 0.7.x: generate KHONG co --wait. mind-map note-backed la dong bo; video/audio/slide-deck
 // tu poll den khi xong. image lay qua `infographic`.
@@ -55,13 +68,14 @@ export default {
     await run(BIN, ["use", nbId], { timeoutMs: 30_000 });
     await run(BIN, ["source", "add", filePath], { timeoutMs: 300_000 }); // index xong moi sinh
 
+    const base = baseName(title);
     const outputs = {};
     for (const kind of kinds) {
       const m = MAP[kind];
       if (!m) continue;
       try {
         await run(BIN, ["generate", ...m.gen], { timeoutMs: GEN_TIMEOUT });
-        let out = path.join(outDir, `${kind}.${m.ext}`);
+        let out = path.join(outDir, `${base} - ${kind}.${m.ext}`);
         await run(BIN, ["download", m.dl, out], { timeoutMs: 600_000 });
         // mindmap: NotebookLM chi cho JSON -> render HTML (tuong tac) + PNG (xem trong Drive).
         if (kind === "mindmap") {
