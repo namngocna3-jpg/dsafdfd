@@ -3,20 +3,38 @@
 > Cập nhật liên tục. Mở Claude Code (PowerShell/web) ở bất kỳ tài khoản nào → đọc file này là tiếp tục được.
 > Repo: `namngocna3-jpg/dsafdfd`, nhánh `claude/wizardly-bell-fxnsal`, code trong `auto-content-app/`.
 
-## ⭐ KHI QUAY LẠI LÀM TIẾP (đọc trước tiên)
-App chạy bằng **systemd** trên VPS → đóng cmd/SSH KHÔNG tắt app; job async đang chạy vẫn xong & tự đẩy lên Drive.
+## ⭐ FLOW ĐÃ CHỐT (25/06/2026) — đọc trước tiên
 
-**Việc dở đang chờ nghiệm thu:** test `kinds=pptx,video` (job tên "test full") để xác nhận:
-- pptx ra file (lần trước hỏng do 2 job đè nhau — ĐÃ thêm queue, cần xác nhận lại).
-- video ra `.mp4` (CHƯA verify end-to-end lần nào).
+**Hệ thống HOÀN CHỈNH & đang chạy.** App systemd trên VPS, đóng cmd KHÔNG tắt app.
 
-**Khi quay lại, làm theo thứ tự:**
-1. SSH vào VPS: `ssh root@103.72.57.56`.
-2. Xem job "test full" đã xong chưa: `journalctl -u autocontent -n 60 --no-pager | grep -iE "test full|xong|callback|bo qua|video|pptx"`.
-3. Kiểm tra Drive output có `test full - pptx.pptx` + `test full - video.mp4` chưa.
-   - Nếu CÓ cả 2 → **đủ 6/6 loại, xong hẳn** → đánh dấu hoàn thành.
-   - Nếu thiếu/chưa chạy → chạy lại test (lệnh ở mục 1 "Test nhanh", kinds=pptx,video) và chờ ~10–13'.
-4. (Tùy chọn còn lại ở mục 8.)
+### Định tuyến cuối cùng (mỗi loại 1 công cụ)
+| Loại (kind) | Công cụ | File ra | Trạng thái |
+|---|---|---|---|
+| `video` | NotebookLM | `.mp4` | ✅ verify |
+| `audio` | NotebookLM | `.mp3` | ✅ lệnh ok |
+| `mindmap` | NotebookLM + render | `.png` + `.pdf` + `.html` | ✅ verify |
+| `image` | NotebookLM (infographic) | `.png` | ✅ verify |
+| `ebook` | **Gamma API** | `.pdf` (slide/tài liệu đẹp) | ✅ verify |
+
+> kinds.mjs gộp slide/pptx/pdf/slide-deck → `ebook` (Gamma). NotebookLM lo phần còn lại.
+
+### Luồng tự động (async, qua 2 Make scenario)
+```
+Drive input → Make SC1 (POST /generate?async=1) → VPS (queue: 1 job/lúc, sinh nền)
+   → callback webhook → Make SC2 → Drive output + email
+```
+
+### Cách dùng
+Thả file vào Drive **input**, đặt tên kèm loại: `Bài 1 - Marketing [mindmap,video,ebook].pdf`
+→ vài phút sau ra đủ file trong Drive **output** + email.
+
+### CÒN LẠI (housekeeping / tùy chọn)
+1. **Theme Peach cho Gamma**: vào Gamma → Settings đặt Peach làm theme mặc định (API không set themeName được).
+2. **Bảo mật — ĐỔI các key đã lộ trong chat**: Gamma API key, `APP_TOKEN` (11261320), mật khẩu VPS. Sau khi đổi → cập nhật `.env` (`GAMMA_API_KEY`, `APP_TOKEN`) + header Bearer trong Make SC1 module 3 + `systemctl restart autocontent`.
+3. **Tinh chỉnh ebook**: `.env` `GAMMA_NUM_CARDS` (số trang/level, vd 14), `GAMMA_FORMAT=document`, `GAMMA_DIMENSIONS=fluid|16x9|4x3`, `GAMMA_INSTRUCTIONS`, `GAMMA_TONE`. Theo dõi `credits.remaining` trong log (mỗi ebook ~100 credits).
+4. **Logic dàn trang theo level** (5 bài ≈ 60 trang...) nếu muốn tự động định mức.
+5. **Provider B (`nlm`)** dự phòng NotebookLM — mục 10, khi cần.
+6. Nghiệm thu cuối nếu chưa: thả 1 file thật `[mindmap,video,ebook]` qua Make, xác nhận ra đủ 3 file.
 
 ---
 
