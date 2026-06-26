@@ -77,8 +77,20 @@ export default {
       format: process.env.GAMMA_FORMAT || "presentation",
       exportAs,
       additionalInstructions: process.env.GAMMA_INSTRUCTIONS || DEFAULT_INSTR,
+      textOptions: {
+        amount: process.env.GAMMA_TEXT_AMOUNT || "detailed",
+        tone: process.env.GAMMA_TONE || "than thien, khuyen khich, de hieu",
+        language: process.env.GAMMA_LANG || "vi",
+      },
+      imageOptions: {
+        source: process.env.GAMMA_IMAGE_SOURCE || "aiGenerated",
+        style: process.env.GAMMA_IMAGE_STYLE || "illustration",
+      },
+      cardOptions: {
+        dimensions: process.env.GAMMA_DIMENSIONS || "4x3",
+      },
     };
-    const nc = Number(process.env.GAMMA_NUM_CARDS || 0);
+    const nc = Number(process.env.GAMMA_NUM_CARDS || 10);
     if (nc > 0) body.numCards = nc;
 
     const res = await fetch(API, {
