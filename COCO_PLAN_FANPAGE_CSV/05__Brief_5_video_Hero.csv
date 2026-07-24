@@ -1,0 +1,15 @@
+﻿BRIEF 5 VIDEO HERO — LANDING PAGE COCO STUDIO
+Seedance-ready · 1080p · 16:9 desktop + 9:16 mobile · 5-8s/clip loop · overlay text bằng HTML (không nhồi vào video) · tông xanh-đen brand
+#,Loại,"Prompt (EN, Seedance-ready)",Camera / Mood,Overlay
+1,Branded / TVC,"A luxury glass perfume bottle rotating slowly on a wet reflective black surface, water droplets splashing in slow motion around it, dramatic rim lighting with soft golden highlights, camera does a slow 180-degree orbit around the product, shallow depth of field, high-end commercial aesthetic, cinematic color grading, hyper-detailed, 1080p",Slow orbit 180° / premium,"""TVC-ready in hours, not weeks."""
+2,Cinematic,"Cinematic aerial shot flying through a vast ancient cave, golden sunbeams piercing through openings in the rock ceiling and hitting a misty underground river below, lush green moss on the walls, epic scale, volumetric god rays, camera flies forward and slightly upward revealing the grand interior, IMAX documentary style, rich cinematic color grade, 1080p",Forward fly-through / epic,"""Shots you can't afford to film. Now you can."""
+3,Game / Stylized,"A stylized armored warrior character standing on a cliff edge in a fantasy game world, cape flowing in the wind, glowing energy sword in hand, dramatic dusk sky with floating islands in the background, camera slowly pushes in from a low angle for a heroic reveal, AAA game cinematic style, stylized 3D render, volumetric lighting, 1080p",Low-angle push-in / heroic,"""From concept to game trailer."""
+4,Real Human / eKYC,"Cinematic close-up portrait of a professional Vietnamese female model, natural realistic skin texture, subtle confident smile forming, soft studio beauty lighting with a gentle catchlight in the eyes, shallow depth of field with a softly blurred background, camera slowly pushes in, photorealistic, commercial beauty campaign aesthetic, 1080p","Slow push-in / thật, đáng tin","""Real faces, cleared with eKYC. Compliant for commercial use."""
+5,Animation / Anime,"Anime style scene of a young character standing on a rooftop at sunset overlooking a futuristic Tokyo cityscape, wind blowing through their hair, warm orange and pink sky with drifting clouds, camera slowly tilts up from the city to the character's face, Studio-quality Japanese animation, vibrant colors, soft cel shading, 1080p",Tilt-up reveal / mộng mơ,"""Every style your brand needs."""
+
+CHỐT PHƯƠNG ÁN SẢN XUẤT
+Prompt & concept,BẠN đã có sẵn (xong).
+"Render V1,2,3,5",BẠN tự render ngay (cần tài khoản credit Coco).
+Render V4 (face thật),CỘNG TÁC team Coco/Peacom: cần người mẫu có consent + eKYC đúng quy trình — chính video này là demo pháp lý.
+Grade / ghép loop / overlay,Editor nhẹ (CapCut/Premiere).
+Nhúng landing,Dev web Coco thay ô video trống trên trang.

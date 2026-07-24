@@ -1,0 +1,11 @@
+﻿CÔNG THỨC TÍNH CHỈ SỐ — ĐỂ BÁO CÁO CHÍNH XÁC,,,
+,,,
+Chỉ số,Công thức,Ngưỡng tốt,Ý nghĩa
+DAU/MAU (stickiness),Active hàng ngày / Active hàng tháng,≥20%,Độ dính của cộng đồng
+Post rate người mới,% member post trong 7 ngày đầu,≥15%,Onboarding hiệu quả
+Thread reply rate,% bài có ≥1 reply / tổng bài,≥30%,Bài có được tương tác không
+Lurker ratio,% member không post 30 ngày,<70%,Bao nhiêu người im lặng
+% content từ member,Bài member / tổng bài,≥50% (từ T4),Cộng đồng tự sống chưa
+CPR (nếu paid),Chi phí ads / số member mới từ ads,<5.000đ,Hiệu quả tiền ads
+Viral coefficient,Số member mới do 1 member mời,≥0.3,Tự lan tỏa
+Lead→Sale rate,Đơn chốt / lead bàn giao,≥10%,Cộng đồng ra tiền chưa

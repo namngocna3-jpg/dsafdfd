@@ -1,0 +1,17 @@
+﻿KỊCH BẢN CHATBOT / AUTO-REPLY — TỪNG TIN NHẮN,,,
+,,,
+Trigger (khi nào),Tin nhắn bot gửi (nguyên văn),Nút bấm / Hành động,Mục tiêu
+Member được duyệt vào group,"Chào [Tên] 👋 Mừng bạn gia nhập AI Video Creators Vietnam!
+Mình gửi bạn 3 thứ để bắt đầu:
+1️⃣ Bộ AI Video Pro Kit (20 prompt + checklist)
+2️⃣ Mã giảm vé sự kiện 31/07
+3️⃣ Link bài 'Start Here'
+Bạn muốn nhận cái nào trước?",[Nhận Pro Kit] [Nhận mã vé] [Start Here],Kích hoạt 24h đầu
+Bấm 'Nhận Pro Kit',"Đây nhé 📂 [link tải Pro Kit]
+Tip: mở file '20 prompt Seedance' và thử ngay 1 cái, rồi khoe kết quả trong group — tụi mình sẽ góp ý cho bạn.",[Đã tải] [Xem Khám video AI],Tạo hành động đầu tiên
+Bấm 'Nhận mã vé',"Mã giảm [X]% vé sự kiện của bạn: COCO[XXXX] 🎟️
+Đặt vé tại [link Quickom]. Vé Silver trở lên có kèm Coco Credits để tạo video thật với Seedance.
+Hẹn gặp bạn ở Sofitel ngày 31/07!",[Đặt vé ngay],Chuyển đổi vé
+Member đăng bài đầu tiên,🎉 Bài đầu tiên của bạn trong group! Cảm ơn [Tên] đã chia sẻ. Anh/em trong group sẽ vào góp ý sớm. Cứ hỏi thoải mái nhé.,-,Củng cố hành vi
+Sau sự kiện (khách đã check-in),Cảm ơn bạn đã đến sự kiện hôm nay 🙌 Slide + tài liệu độc quyền của buổi đã được đăng trong group tại [link ghim]. Số 'Khám video AI' đầu tiên mở tuần sau — giữ suất bằng cách comment video bạn muốn được review.,[Xem tài liệu] [Giữ suất review],Nurture hậu event
+Member im lặng 14 ngày,"Lâu rồi không thấy bạn 👀 Tuần này group có [chủ đề hot] và số Khám video AI mới. Ghé xem thử nhé: [link]. Có gì đang kẹt cứ đăng lên, tụi mình gỡ cùng.",[Xem ngay],Chống lurker/churn

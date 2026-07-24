@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coco Studio × Cộng đồng AI Video — Slide Deck</title>
+<style>
+  :root{
+    --bg:#0A0E0C; --ink:#EAF2EC; --mut:#8FA396; --neon:#00E676; --neon-dim:#0BAF5C;
+    --gold:#FFD166; --line:#1C2622; --card:#111815; --danger:#FF5C6C;
+    --fc:#8CC5F0; --fw:#FFB27A; --fh:#FF9AA4;
+    --f-disp:"Georgia",serif; --f-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#05060 5;background:#050706;color:var(--ink);font-family:var(--f-body);overflow:hidden;display:flex;align-items:center;justify-content:center}
+  ::selection{background:var(--neon);color:#04120A}
+
+  /* STAGE 16:9 */
+  #stage{position:relative;width:min(100vw,177.78vh);height:min(56.25vw,100vh);background:var(--bg);overflow:hidden;box-shadow:0 0 80px rgba(0,0,0,.6)}
+  .slide{position:absolute;inset:0;padding:6.2% 7%;opacity:0;visibility:hidden;transition:opacity .45s ease;display:flex;flex-direction:column;justify-content:center}
+  .slide.active{opacity:1;visibility:visible}
+  .slide::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+    radial-gradient(60% 50% at 85% 0%,rgba(0,230,118,.10),transparent 60%),
+    radial-gradient(50% 40% at 0% 100%,rgba(11,175,92,.08),transparent 60%)}
+  .slide>*{position:relative;z-index:1}
+
+  /* type scale — relative to viewport width of stage */
+  h1{font-family:var(--f-disp);font-weight:400;font-size:5.4vh;line-height:1.05;letter-spacing:-.5px}
+  h1 em{font-style:italic;color:var(--neon)}
+  h2{font-family:var(--f-disp);font-weight:400;font-size:4.2vh;line-height:1.1;letter-spacing:-.3px;margin-bottom:1.6vh}
+  .kicker{font-size:1.55vh;letter-spacing:.4vh;text-transform:uppercase;color:var(--neon-dim);margin-bottom:2vh;font-weight:600}
+  .lead{color:var(--mut);font-size:2.3vh;max-width:80%;margin-top:2.2vh;line-height:1.5}
+  p{font-size:2vh;line-height:1.5}
+
+  .eyebrow{display:inline-flex;align-items:center;gap:1vh;font-size:1.5vh;letter-spacing:.35vh;text-transform:uppercase;color:var(--neon);border:1px solid var(--neon-dim);padding:.9vh 2vh;border-radius:999px;margin-bottom:3.5vh;width:fit-content}
+  .eyebrow .dot{width:1vh;height:1vh;border-radius:50%;background:var(--neon);box-shadow:0 0 1.4vh var(--neon)}
+
+  .metaline{margin-top:4.5vh;display:flex;gap:5vh;flex-wrap:wrap}
+  .metaline div{font-size:1.7vh;color:var(--mut)}
+  .metaline b{color:var(--ink);display:block;font-size:4.4vh;font-family:var(--f-disp);line-height:1}
+
+  /* grids */
+  .grid{display:grid;gap:2vh;margin-top:1vh}
+  .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:1.6vh;padding:2.6vh 2.4vh}
+  .card .tag{font-size:1.35vh;letter-spacing:.2vh;text-transform:uppercase;color:var(--neon);font-weight:600}
+  .card h3{font-family:var(--f-disp);font-weight:400;font-size:2.7vh;margin:.8vh 0 .6vh}
+  .card .price{font-size:1.55vh;color:var(--mut);margin-bottom:1.4vh}
+  .card ul{list-style:none;font-size:1.7vh;color:var(--mut)}
+  .card li{padding:.5vh 0 .5vh 2vh;position:relative;line-height:1.35}
+  .card li::before{content:"▸";position:absolute;left:0;color:var(--neon-dim)}
+  .ver-badge{font-family:var(--f-disp);font-size:4.6vh;color:var(--neon);border-bottom:2px solid var(--neon-dim);padding-bottom:.3vh;line-height:1}
+
+  /* audit callout */
+  .callout{background:linear-gradient(180deg,rgba(255,92,108,.09),transparent);border:1px solid rgba(255,92,108,.3);border-left:3px solid var(--danger);border-radius:1.4vh;padding:3vh 3.2vh;margin-bottom:3vh}
+  .callout h3{color:var(--danger);font-size:1.6vh;letter-spacing:.2vh;text-transform:uppercase;margin-bottom:1vh}
+  .callout .big{font-family:var(--f-disp);font-size:3.6vh}
+  .callout .big s{color:var(--mut);text-decoration-color:var(--danger)} .callout .big b{color:var(--neon)}
+  .callout p{color:var(--mut);margin-top:1vh;font-size:1.8vh}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:1.75vh;margin-top:1vh}
+  th,td{text-align:left;padding:1.15vh 1.2vh;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--neon);font-size:1.35vh;letter-spacing:.2vh;text-transform:uppercase}
+  .role{font-weight:700;color:var(--ink)}
+  .funnel{display:inline-block;font-size:1.3vh;padding:.3vh 1.1vh;border-radius:.6vh;font-weight:700}
+  .cc{background:rgba(93,173,226,.15);color:var(--fc)} .cw{background:rgba(255,145,60,.15);color:var(--fw)} .ch{background:rgba(255,92,108,.15);color:var(--fh)}
+
+  /* timeline horizontal */
+  .tl{display:grid;grid-template-columns:repeat(5,1fr);gap:1.6vh;margin-top:3vh}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:1.4vh;padding:2.2vh 1.8vh;position:relative;padding-top:3.4vh}
+  .step .num{position:absolute;top:-1.6vh;left:1.8vh;width:3.2vh;height:3.2vh;border-radius:50%;background:var(--bg);border:2px solid var(--neon);color:var(--neon);display:flex;align-items:center;justify-content:center;font-family:var(--f-disp);font-size:1.8vh}
+  .step .n{font-size:1.3vh;letter-spacing:.15vh;color:var(--neon-dim);text-transform:uppercase}
+  .step h4{font-size:1.9vh;margin:.5vh 0 .6vh;line-height:1.2}
+  .step p{color:var(--mut);font-size:1.5vh;line-height:1.35}
+  .step .who{display:inline-block;margin-top:1vh;font-size:1.25vh;color:var(--gold);border:1px solid rgba(255,209,102,.3);padding:.2vh 1vh;border-radius:.6vh}
+
+  .pills{display:flex;gap:1.4vh;flex-wrap:wrap;margin-top:2.6vh}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:1vh 2vh;font-size:1.6vh;color:var(--mut)}
+  .pill b{color:var(--neon)}
+  .note{margin-top:2.4vh;color:var(--mut);font-size:1.75vh}
+  .note b{color:var(--ink)}
+  .decide ol{margin-left:2.4vh;font-size:2.1vh;line-height:1.7} .decide li{padding:.6vh 0} .decide b{color:var(--neon)}
+
+  .center{align-items:center;text-align:center}
+  .center .lead{max-width:70%}
+
+  /* chrome */
+  #hud{position:fixed;bottom:2vh;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:1.5vh;z-index:20;background:rgba(10,14,12,.7);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:999px;padding:.8vh 1.6vh}
+  #hud button{background:none;border:none;color:var(--mut);font-size:2.2vh;cursor:pointer;padding:0 .6vh;line-height:1;transition:.2s}
+  #hud button:hover{color:var(--neon)}
+  #counter{font-size:1.5vh;color:var(--mut);min-width:5vh;text-align:center;font-variant-numeric:tabular-nums}
+  #counter b{color:var(--neon)}
+  #bar{position:fixed;top:0;left:0;height:3px;background:var(--neon);z-index:30;transition:width .4s;box-shadow:0 0 12px var(--neon)}
+  .snum{position:absolute;top:5vh;right:7%;font-family:var(--f-disp);font-size:1.6vh;color:var(--neon-dim)}
+  .hint{position:fixed;bottom:2vh;right:2.5vh;font-size:1.4vh;color:var(--mut);z-index:20}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+  <!-- 1 COVER -->
+  <section class="slide active center">
+    <span class="eyebrow" style="margin-left:auto;margin-right:auto"><span class="dot"></span>Peacom × BytePlus · Dreamina Seedance</span>
+    <h1>Xây cộng đồng <em>AI Video</em><br>chuẩn thương mại tại Việt Nam</h1>
+    <p class="lead" style="margin-left:auto;margin-right:auto">Kế hoạch triển khai Coco Studio & cộng đồng "AI Video Creators Vietnam" — Production House · Agency · Game Studio · Brand · Freelancer pro.</p>
+    <div class="metaline" style="justify-content:center">
+      <div><b>50.000</b>mục tiêu / 6 tháng</div>
+      <div><b>5 → ?</b>xuất phát thật</div>
+      <div><b>3</b>phiên bản</div>
+      <div><b>31/07</b>đòn bẩy sự kiện</div>
+    </div>
+  </section>
+
+  <!-- 2 AUDIT -->
+  <section class="slide">
+    <span class="snum">01</span>
+    <div class="kicker">Sự thật trước khi lập kế hoạch</div>
+    <h2>Group 5 member không phải group đã có nửa triệu người.</h2>
+    <div class="callout">
+      <h3>◤ Hiệu chỉnh mục tiêu tháng 1</h3>
+      <p class="big"><s>2.000 vội vã</s> &nbsp;→&nbsp; <b>800 member chất lượng</b></p>
+      <p>Giai đoạn 0→1: "7 bài/ngày để thuật toán đề xuất" vô nghĩa khi chưa có người. Thà 800 member thật sự làm nghề còn hơn 2.500 người vào rồi im. Đổ traffic vào xô thủng là đốt tiền.</p>
+    </div>
+    <div class="grid g3">
+      <div class="card"><span class="tag">✅ Áp ngay</span><h3>Bản sắc & SEO</h3><ul><li>Concept "Xưởng Phim AI"</li><li>Tôn trọng chất xám</li><li>Tối ưu group trước khi kéo</li></ul></div>
+      <div class="card"><span class="tag" style="color:var(--gold)">⚠️ Một phần</span><h3>6 kênh tăng member</h3><ul><li>Kích K1 share + K3 KOL + Event</li><li>"Thuật toán đề xuất" hoãn sau</li></ul></div>
+      <div class="card"><span class="tag" style="color:var(--danger)">❌ Chưa áp</span><h3>Đo full KPI</h3><ul><li>30 ngày: đo 3 số cốt lõi</li><li>Full KPI khi &gt;2–3k member</li></ul></div>
+    </div>
+  </section>
+
+  <!-- 3 VER -->
+  <section class="slide">
+    <span class="snum">02</span>
+    <div class="kicker">Một nền tảng, ba động cơ tăng trưởng</div>
+    <h2>Chọn phiên bản theo ngân sách — nền chiến lược giữ nguyên.</h2>
+    <div class="grid g3">
+      <div class="card"><span class="ver-badge">01</span><div class="tag" style="margin-top:1vh">Organic-First</div><h3>Cộng đồng chất dẫn dắt</h3><p class="price">15–25tr · đích ~22k chất</p><ul><li>Content + KOL + SEO group</li><li>6 kênh tăng member tự nhiên</li><li>Rủi ro tiền thấp nhất</li></ul></div>
+      <div class="card" style="border-color:var(--neon-dim)"><span class="ver-badge">02</span><div class="tag" style="margin-top:1vh">Paid-Growth</div><h3>Đổ lực ép đủ 50k</h3><p class="price">120–180tr · đích 50–52k</p><ul><li>FB/TikTok Ads + booking</li><li>Creative test A/B liên tục</li><li>Retention engine giữ member</li></ul></div>
+      <div class="card"><span class="ver-badge">03</span><div class="tag" style="margin-top:1vh">Event-Led</div><h3>Sự kiện làm động cơ</h3><p class="price">60–90tr · ~38k + sale sớm</p><ul><li>Chuỗi 6 event / 6 tháng</li><li>Bán gói Coco tại mỗi event</li><li>Thế mạnh tổ chức Peacom</li></ul></div>
+    </div>
+    <p class="note">💡 <b>Gợi ý:</b> lấy Audit 0→1 làm kim chỉ nam 30 ngày → chọn động cơ theo ngân sách → &gt;2–3k member mới bật full khung KPI.</p>
+  </section>
+
+  <!-- 4 CONTENT PILLAR -->
+  <section class="slide">
+    <span class="snum">03</span>
+    <div class="kicker">Content Direction — ai làm gì</div>
+    <h2>Mỗi tuyến nội dung có người sản xuất rõ ràng.</h2>
+    <table>
+      <thead><tr><th>Phễu</th><th>Tuyến nội dung</th><th>Người sản xuất chính</th><th>Hỗ trợ</th></tr></thead>
+      <tbody>
+        <tr><td><span class="funnel cc">LẠNH</span></td><td>Xu hướng & tin AI Video mới</td><td><span class="role">Nhân sự</span> (Content/Mod)</td><td>Seeding share</td></tr>
+        <tr><td><span class="funnel cw">ẤM</span></td><td>Kiến thức kỹ thuật chuyên sâu (kèm file)</td><td><span class="role" style="color:var(--neon)">Chuyên gia</span> + Content chắp bút</td><td>Nhân sự biên tập</td></tr>
+        <tr><td><span class="funnel cw">ẤM</span></td><td>🎬 Khám video AI — review bài member</td><td><span class="role" style="color:var(--neon)">Chuyên gia / KOL</span></td><td>Mod điều phối</td></tr>
+        <tr><td><span class="funnel cw">ẤM</span></td><td>Case study thương mại thật (TVC/game)</td><td><span class="role" style="color:var(--neon)">Chuyên gia / KOL</span> + Nhân sự</td><td>Member góp case</td></tr>
+        <tr><td><span class="funnel ch">NÓNG</span></td><td>Contest / Workshop / Sale khéo</td><td><span class="role">Nhân sự</span> tổ chức</td><td>KOL giám khảo</td></tr>
+        <tr><td><span class="funnel ch">NỀN</span></td><td>Bài seeding nuôi group</td><td><span class="role" style="color:var(--gold)">Seeding</span> (nick thật)</td><td>Mod định hướng</td></tr>
+      </tbody>
+    </table>
+    <div class="pills"><span class="pill">Chuẩn: <b>Ấm 52%</b></span><span class="pill">0→3k: tạm nặng <b>Lạnh</b> để có người</span><span class="pill">Chuyên gia: phỏng vấn → <b>nhân sự chắp bút</b> → duyệt</span></div>
+  </section>
+
+  <!-- 5 ROADMAP -->
+  <section class="slide">
+    <span class="snum">04</span>
+    <div class="kicker">30 ngày đầu — thứ tự đúng</div>
+    <h2>Offer trước, danh sách trước content.</h2>
+    <div class="tl">
+      <div class="step"><span class="num">1</span><div class="n">Tuần 1 · Offer</div><h4>Khám video AI số 0 + Pro Kit</h4><p>Offer phải gánh toàn bộ khi chưa có quán tính.</p><span class="who">Chuyên gia+Lead</span></div>
+      <div class="step"><span class="num">2</span><div class="n">Tuần 1–2 · Danh sách</div><h4>DM tay 50 người + hốt từ event</h4><p>Kiếm "đám đông đói" trước khi nấu ăn.</p><span class="who">Lead</span></div>
+      <div class="step"><span class="num">3</span><div class="n">Tuần 2 · Seed</div><h4>10 bài chất + phủ comment</h4><p>Phục vụ 30 người đầu tới mức remarkable.</p><span class="who">Content+Seed</span></div>
+      <div class="step"><span class="num">4</span><div class="n">Tuần 2–3 · Reach</div><h4>Event 31/07 làm cú hích</h4><p>Mua reach 1 lần vượt ngưỡng thuật toán.</p><span class="who">Cả team</span></div>
+      <div class="step"><span class="num">5</span><div class="n">Tuần 4 · Kiểm chứng</div><h4>Đo 3 số → quyết định</h4><p><b style="color:var(--danger)">Tripwire:</b> vào rồi im → sửa offer trước.</p><span class="who">Lead</span></div>
+    </div>
+  </section>
+
+  <!-- 6 PRICE -->
+  <section class="slide">
+    <span class="snum">05</span>
+    <div class="kicker">Định giá & bán hàng</div>
+    <h2>Combo bám cấu trúc vé sự kiện, bán bằng USP.</h2>
+    <div class="grid g4">
+      <div class="card"><div class="tag">Silver · 990k</div><h3>~200 video</h3><p class="price">2.000 credit. Freelancer, thử nghiệm.</p></div>
+      <div class="card" style="border-color:var(--neon-dim)"><div class="tag" style="color:var(--gold)">Gold ⭐ · 1.9tr</div><h3>~400 video · 4K</h3><p class="price">4.000 credit. Gói NEO best-value.</p></div>
+      <div class="card"><div class="tag">Diamond · 4.99tr</div><h3>~950 video</h3><p class="price">10.500 credit. Agency, Production.</p></div>
+      <div class="card"><div class="tag" style="color:var(--neon)">Titan · 9.99tr</div><h3>eKYC Face thật</h3><p class="price">22.000 credit. Brand/Enterprise.</p></div>
+    </div>
+    <p class="note">🎯 <b>Insight sale:</b> vé Gold event (4.99tr = 11.500cr + face thật) "lời" hơn gói Diamond web → đẩy vé rồi upsell. Bán qua cộng đồng: <b>không post bán trong group</b>, chỉ inbox khi phát hiện lead nóng.</p>
+  </section>
+
+  <!-- 7 DECIDE -->
+  <section class="slide">
+    <span class="snum">06</span>
+    <div class="kicker">Cần sếp quyết</div>
+    <h2>Ba điều chốt xong là chạy được.</h2>
+    <div class="decide">
+      <ol>
+        <li><b>Ngân sách paid/booking</b> — quyết định chọn phiên bản. Không tiền → thực tế 12–25k, không phải 50k.</li>
+        <li><b>% giảm vé + credit bonus</b> — điền vào mồi câu kéo traffic & chatbot.</li>
+        <li><b>Tên group cuối cùng</b> — đang để "AI Video Creators Vietnam" / "Xưởng Phim AI".</li>
+      </ol>
+    </div>
+    <div class="pills"><span class="pill">📁 <b>3 file</b> × 43 sheet</span><span class="pill">✍️ 10 bài seed viết sẵn</span><span class="pill">🎬 Brief 5 video</span><span class="pill">💬 Kịch bản sale + objection</span><span class="pill">🤝 KOL 3 bậc</span></div>
+  </section>
+
+  <!-- 8 CLOSING -->
+  <section class="slide center">
+    <span class="eyebrow" style="margin-left:auto;margin-right:auto"><span class="dot"></span>Sẵn sàng triển khai</span>
+    <h1><em>Xưởng Phim AI</em><br>bắt đầu từ hôm nay.</h1>
+    <p class="lead" style="margin-left:auto;margin-right:auto">Nền chiến lược đã dựng. Nội dung đã viết sẵn. Chỉ cần chốt 3 điều và chạy.</p>
+    <p class="note" style="margin-top:4vh">Phạm Thành Danh · Coco Studio × Peacom × BytePlus · 2026</p>
+  </section>
+
+</div>
+
+<div id="hud">
+  <button id="prev" aria-label="Slide trước">‹</button>
+  <span id="counter"><b>1</b> / 8</span>
+  <button id="next" aria-label="Slide sau">›</button>
+</div>
+<div class="hint">← → hoặc Space · F: toàn màn hình</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const bar=document.getElementById('bar'), counter=document.getElementById('counter');
+  let i=0;
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    counter.innerHTML='<b>'+(i+1)+'</b> / '+slides.length;
+  }
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();show(i+1);}
+    if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();show(i-1);}
+    if(e.key==='Home')show(0); if(e.key==='End')show(slides.length-1);
+    if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+  });
+  // click phải/trái nửa màn hình để lật
+  document.getElementById('stage').addEventListener('click',e=>{
+    if(e.target.closest('#hud'))return;
+    const r=e.currentTarget.getBoundingClientRect();
+    (e.clientX-r.left)/r.width>0.5?show(i+1):show(i-1);
+  });
+  show(0);
+</script>
+</body>
+</html>
